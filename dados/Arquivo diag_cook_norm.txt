@@ -1,0 +1,23 @@
+#------------------------------------------------------------------------------------------#
+# Comandos:
+#          fit.model = ajuste
+#          attach(dados)
+#          source("diag_cook_norm.txt")     
+#------------------------------------------------------------------------------------------#
+X =  model.matrix(fit.model)
+n =  nrow(X)
+p =  ncol(X)
+H =  X%*%solve(t(X)%*%X)%*%t(X)
+h =  diag(H)
+r =  resid(fit.model)
+s =  sqrt(sum(r*r)/(n-p))
+ts =  r/(s*sqrt(1-h))
+di =  (1/p)*(h/(1-h))*(ts^2)
+#
+# Reta de corte com 4 desvios padrao
+plot(di,xlab="Indice", ylab="Distancia de Cook", pch=16, cex=2,cex.lab=1.5, cex.axis=1.5)
+cut = mean(di) + 4*sd(di)
+abline(cut,0,lty=2,lwd=2)
+# Comando para ser acionado com n sendo o numero de pontos destacados
+identify(di, n=1, cex=2, label=UF)
+#------------------------------------------------------------------------------------------#
