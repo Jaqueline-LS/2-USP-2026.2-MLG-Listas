@@ -1,27 +1,65 @@
 ---
 title: "Lista 1 - Prática (MAE5763)"
-author: "Jaqueline Lamas e Lais Uchoa"
-format: pdf
+author: "Jaqueline Lamas (17646475) e Lais Uchoa()"
+format: 
+    pdf:
+      fig-width: 7
+      fig-height: 8
+      fig-align: center
 editor: source
+toc: true
+
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
-```{r}
-1 + 1
+```{r setup, include=FALSE, warning=FALSE, results = 'asis', echo=FALSE}
+suppressMessages(library(gamlss))
 ```
 
-You can add options to executable code like this
 
-```{r}
-#| echo: false
-2 * 2
+# Exercício 1
+
+* *UF* (nome do estado);
+* *pop* (população estimada em julho de 1975);
+* *renda* (renda percapita em 1974 em USD);
+* *propa* (proporção de analfabetos em 1970);
+* *expec* (expectativa de vida em anos 1969-70);
+* *taxa* (taxa de criminalidade por 100000 habitantes 1976);
+* *prope* (porcentagem de estudantes que concluem segundo grau 1970);
+* *ndazero* (número de dias do ano com temperatura abaixo de zero
+grau Celsus na cidade mais importante do estado);
+* *area* (área do estado em milhas quadradas).
+
+```{r, echo=FALSE}
+reg3 <- read.table("dados/reg3.txt", header=TRUE)
+# summary(reg3)
+attach(reg3)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+O objetivo do estudo é explicar a *expec* média usando um modelo de
+regressão normal linear dadas as variáveis explicativas *renda*, *propa*, *taxa*, *prope* e *ndazero*.
+
+## Análise Descritiva
+
+```{r, echo=FALSE}
+par(mfrow=c(3,2), mar=c(5,4,3,2))
+plot(renda, expec, pch=16, xlab="Renda Per Capita",
+     ylab="Expectativa de Vida")
+lines(smooth.spline(expec, renda, df=4))
+plot(propa, expec, pch=16, xlab="Proporção de analfabetos em 1970",
+     ylab="Expectativa de Vida")
+
+plot(taxa, expec, pch=16, xlab="Taxa de Criminalidade",
+     ylab="Expectativa de Vida")
+
+plot(prope, expec, pch=16, xlab="Porcentagem de Estudantes que Concluem Segundo Grau 19",ylab="Expectativa de Vida")
+
+plot(prope, ndazero, pch=16, xlab="Número de Dias do Ano", ylab="Expectativa de Vida")
+mtext("Figura 1: Gráficos de dispersão da variável resposta pelas explicativas.", side = 3, line = -2, outer = TRUE)
+```
+
+* **Interpretação**
+
+Homocedasticidade no caso da Poisson, a média é igual a variancia.
+
+5 páginas por questão!!!
+
