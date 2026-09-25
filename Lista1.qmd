@@ -59,7 +59,7 @@ mtext("Figura 1: Gráficos de dispersão da variável resposta pelas explicativa
 
 * **Interpretação**
 
-Homocedasticidade no caso da Poisson, a média é igual a variancia.
+Como fica a homocedasticidade no caso da Poisson, a média é igual a variancia.
 
 5 páginas por questão!!!
 
