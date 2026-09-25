@@ -42,6 +42,11 @@ regressão normal linear dadas as variáveis explicativas *renda*, *propa*, *tax
 
 ```{r, echo=FALSE}
 par(mfrow=c(3,2), mar=c(5,4,3,2))
+
+
+
+
+
 plot(renda, expec, pch=16, xlab="Renda Per Capita",
      ylab="Expectativa de Vida")
 lines(smooth.spline(expec, renda, df=4))
