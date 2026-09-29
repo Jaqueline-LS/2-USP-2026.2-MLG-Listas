@@ -18,49 +18,136 @@ suppressMessages(library(gamlss))
 
 # Exercício 1
 
-* *UF* (nome do estado);
-* *pop* (população estimada em julho de 1975);
-* *renda* (renda percapita em 1974 em USD);
-* *propa* (proporção de analfabetos em 1970);
-* *expec* (expectativa de vida em anos 1969-70);
-* *taxa* (taxa de criminalidade por 100000 habitantes 1976);
-* *prope* (porcentagem de estudantes que concluem segundo grau 1970);
-* *ndazero* (número de dias do ano com temperatura abaixo de zero
-grau Celsus na cidade mais importante do estado);
-* *area* (área do estado em milhas quadradas).
+* **UF** (nome do estado); **pop** (população estimada em julho de 1975); **renda** (renda percapita em 1974 em USD); **propa** (proporção de analfabetos em 1970); **expec** (expectativa de vida em anos 1969-70); **taxa** (taxa de criminalidade por 100000 habitantes 1976); **prope** (porcentagem de estudantes que concluem segundo grau 1970); **ndazero** (número de dias do ano com temperatura abaixo de zero grau Celsus na cidade mais importante do estado); **area** (área do estado em milhas quadradas).
 
 ```{r, echo=FALSE}
 reg3 <- read.table("dados/reg3.txt", header=TRUE)
-# summary(reg3)
+#summary(reg3)
 attach(reg3)
 ```
 
-O objetivo do estudo é explicar a *expec* média usando um modelo de
-regressão normal linear dadas as variáveis explicativas *renda*, *propa*, *taxa*, *prope* e *ndazero*.
+O objetivo do estudo é explicar a *expec* média usando um modelo de regressão normal linear dadas as variáveis explicativas *renda*, *propa*, *taxa*, *prope* e *ndazero*.
 
 ## Análise Descritiva
 
 ```{r, echo=FALSE}
 par(mfrow=c(3,2), mar=c(5,4,3,2))
-
-
-
-
-
 plot(renda, expec, pch=16, xlab="Renda Per Capita",
      ylab="Expectativa de Vida")
-lines(smooth.spline(expec, renda, df=4))
-plot(propa, expec, pch=16, xlab="Proporção de analfabetos em 1970",
-     ylab="Expectativa de Vida")
+lines(smooth.spline(renda, expec, df=4), lwd=2, col="coral")
+
+plot(propa, expec, pch=16, xlab="Proporção de analfabetos em 1970",ylab="Expectativa de Vida")
+lines(smooth.spline(propa, expec, df=4), lwd=2, col="coral")
 
 plot(taxa, expec, pch=16, xlab="Taxa de Criminalidade",
      ylab="Expectativa de Vida")
+lines(smooth.spline(taxa, expec, df=4), lwd=2, col="coral")
 
 plot(prope, expec, pch=16, xlab="Porcentagem de Estudantes que Concluem Segundo Grau 19",ylab="Expectativa de Vida")
+lines(smooth.spline(prope, expec, df=4), lwd=2, col="coral")
 
-plot(prope, ndazero, pch=16, xlab="Número de Dias do Ano", ylab="Expectativa de Vida")
+plot(ndazero, expec, pch=16, xlab="Número de Dias do Ano", ylab="Expectativa de Vida")
+lines(smooth.spline(ndazero, expec, df=4), lwd=2, col="coral")
+
 mtext("Figura 1: Gráficos de dispersão da variável resposta pelas explicativas.", side = 3, line = -2, outer = TRUE)
 ```
+Pelos gráficos de dispersão conseguimos observar que:
+
+* As variáveis Taxa de Criminalidade e Proporção de Analfabetos em 1970 parecem se relacionar negativamente e de forma linear com a Expectativa de Vida. 
+
+* A variável Porcentagem de Estudantes que Conluem o Ensino Médio parece estar relacionada com a resposta por meio de uma curva, com uma tendência positiva.
+
+* As variável Renda e Número de Dias do Ano com Temperaturas abaixo de zero aparenta se relacionar com a resposta por meio de uma curva.
+
+
+## Ajuste do modelo
+
+* **Ajuste inicial**:
+\begin{align*}
+&(1)\ Y_{i} \sim N(\mu_i, \sigma^2)\\
+&(2)\ \mu_i = \beta_0 + \beta_1 renda + \beta_2 propa + \beta_3 taxa + \beta_4 prope + \beta_5 ndazero \\
+\end{align*}
+
+```{r, echo=FALSE, warning=FALSE}
+suppressMessages(m1.reg3 <- gamlss(expec ~ renda + propa + taxa + prope + ndazero,family=NO,trace=F))
+```
+
+* Após a seleção baseada no AIC, temos o seguinte modelo ajustado:
+```{r, echo=FALSE, warning=FALSE}
+suppressMessages(m2.reg3 <- stepGAIC(m1.reg3, trace = F))
+#summary(m2.reg3)
+```
+
+
+\begin{align*}
+&(1)\ Y_{i} \sim N(\hat{\mu_i}, \hat\sigma^2),\hat\sigma^2=  0.5074 \\
+&(2)\ \hat{\mu_i} = 71.04- 0.2831 taxa + 0.0499 prope - 0.0069 ndazero \\
+\end{align*}
+
+Todos os coeficientes foram significativos a um nível de signinficância de 5%.
+
+* Considerando um estado em que a taxa de criminalidade é nula, a porcentagem de estudantes que concluem o ensino médio é igual a zero e nenhum dia ano apresenta temperaturas negativas na cidade mais inportante do estado. Espera-se que a expectativa de vida seja em média 71.04 anos.
+
+* Considerando as outras covariáveis constantes, ao aumentar uma unidade na taxa de criminalidade espera-se uma redução de 0.2831 na média da expectativa de vida.
+
+* Considerando as outras covariáveis constantes, ao aumentar 1% na porporção de estudantes que concluem o ensino médio espera-se observar um aumento de 0.0499 na expectativa de vida média.
+
+* Considerando as outras covariáveis constantes, com o aumento de um dia nos número de dias do ano com temperaturas abaixo de zero na cidade mais importante do estado, espera-se uma redução de 0.0069 na média da expectativa de vida.
+
+## Validação do modelo
+
+
+### Análise de resíduos 
+```{r, echo=FALSE, warning=FALSE, fig.width=8, fig.height=5}
+par(mfrow=c(2,2), mar=c(5,4,3,2), cex.main=0.8)
+plot(resid(m2.reg3) ~ predict(m2.reg3), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = "#2b5c8f")
+plot(resid(m2.reg3) ~ c(1:nrow(reg3)), 
+     xlab = "Índice", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = "#2b5c8f")
+qqnorm(resid(m2.reg3), 
+     xlab = "Quantis teóricos", 
+     ylab = "Resíduos Quantílicos",
+     main = "QQ-plot dos residuos quantilicos", 
+     pch = 16, 
+     col = "#2b5c8f")
+qqline(resid((m2.reg3)), col="coral")
+wp(m2.reg3, col = "coral", pch=16)
+mtext("Figura 2: Gráficos dos resíduos.", side = 3, line = -2, outer = TRUE)
+
+```
+
+* O gráfico dos resíduos pelo valores ajustados não apresenta nenhum padrão indicativo de heterocedasticidade, a suposição de homocedasticidade é atendida;
+
+* O gráfico dos resíduos pelo índice das observações não apresenta padrões indicativos de dependência entre os resíduos;
+
+* Os gráficos dos resíduos comparados com os quantis da normal(qq-plot e wormplot) não apresentam grandes desvios da normalidade. A suposição de normalidade pode ser considerada adequada.
+
+
+### Análise de diagnóstico
+```{r, echo=FALSE}
+m3.reg3 <- lm(expec ~ taxa + prope + ndazero)
+fit.model <- m3.reg3
+source("diag_cook_norm.txt")
+```
+Hawaii é o estado que apresenta a maior distância de 
+Cook. Vamos reajustar o modelo sem essa observação para avaliar seu impacto nas estimavas.
+
+```{r, echo=F}
+influ<-reg3[reg3$UF!="Hawaii",]
+suppressMessages(attach(influ))
+m1.influ <- gamlss(expec ~  taxa + prope + ndazero, family=NO,trace=F)
+summary(m1.influ)
+
+```
+Retirando o estado Havaí observa-se uma redução na significância da variável *ndazero*, ela passa a ser significativa apenas ao nível de significância de 10%. As estimativas pontuais não mudam muito e para as demais covariáveis a inferência é a mesma.
+
+O que fazer com a covariável ndazero??? Em um exemplo na aula o prof eliminou uma interação que só era significativa no modelo com a observação influente. Acho que aqui depende, se o nível adotado for de 10% a inferência não muda!!! 
 
 * **Interpretação**
 
