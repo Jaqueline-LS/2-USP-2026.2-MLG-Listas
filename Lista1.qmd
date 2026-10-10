@@ -1,20 +1,44 @@
 ---
 title: "Lista 1 - Prática (MAE5763)"
-author: "Jaqueline Lamas (17646475) e Lais Uchoa()"
+author: "Jaqueline (17646475) e Maia ()"
 format: 
     pdf:
-      fig-width: 7
-      fig-height: 8
+      fig-width: 6
+      fig-height: 5
       fig-align: center
 editor: source
+logo: logo.png
 toc: true
+toc-title: "Sumário"
+font-family: arial
+font-size: 12pt
 
+# Decomente se quiser um template bonitinho!
+
+# header-includes:
+# - \usepackage{xcolor}
+# - \definecolor{azulime}{HTML}{1C3B6F}
+# - \usepackage{hyperref}
+# - \AtBeginDocument{\hypersetup{colorlinks=true, urlcolor=azulime,linkcolor=azulime, citecolor=azulime}}
+# - \usepackage{fancyhdr}
+# - \usepackage{graphicx}
+# - \pagestyle{fancy}
+# - \fancyhf{}
+# - \fancyhead[R]{\includegraphics[width=2.5cm]{logo.png}}
+# - \fancyfoot[R]{\thepage}
+# - \renewcommand{\headrulewidth}{0pt} 
+# - \renewcommand{\footrulewidth}{0pt} 
+# - \usepackage{titling}
+# - \pretitle{\begin{center}\includegraphics[width=4cm]{logo.png}\\[1cm]}
+# - \posttitle{\end{center}\thispagestyle{empty}\setcounter{page}{1}}
 ---
 
 ```{r setup, include=FALSE, warning=FALSE, results = 'asis', echo=FALSE}
 suppressMessages(library(gamlss))
+cores<-c("#1C3B6F","coral")
 ```
 
+\newpage
 
 # Exercício 1
 
@@ -63,19 +87,20 @@ Pelos gráficos de dispersão conseguimos observar que:
 ## Ajuste do modelo
 
 * **Ajuste inicial**:
+
 \begin{align*}
 &(1)\ Y_{i} \sim N(\mu_i, \sigma^2)\\
 &(2)\ \mu_i = \beta_0 + \beta_1 renda + \beta_2 propa + \beta_3 taxa + \beta_4 prope + \beta_5 ndazero \\
 \end{align*}
 
 ```{r, echo=FALSE, warning=FALSE}
-suppressMessages(m1.reg3 <- gamlss(expec ~ renda + propa + taxa + prope + ndazero,family=NO,trace=F))
+suppressMessages(m1.reg3 <- gamlss(expec ~ renda + propa + taxa + prope + ndazero,family=NO, trace=F))
 ```
 
 * Após a seleção baseada no AIC, temos o seguinte modelo ajustado:
 ```{r, echo=FALSE, warning=FALSE}
 suppressMessages(m2.reg3 <- stepGAIC(m1.reg3, trace = F))
-#summary(m2.reg3)
+#resumo.m2<-summary(m2.reg3)
 ```
 
 
@@ -99,27 +124,26 @@ Todos os coeficientes foram significativos a um nível de signinficância de 5%.
 
 ### Análise de resíduos 
 ```{r, echo=FALSE, warning=FALSE, fig.width=8, fig.height=5}
-par(mfrow=c(2,2), mar=c(5,4,3,2), cex.main=0.8)
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
 plot(resid(m2.reg3) ~ predict(m2.reg3), 
      xlab = "Valores Ajustados", 
      ylab = "Resíduos Quantílicos",
      pch = 16, 
-     col = "#2b5c8f")
+     col = cores[1])
 plot(resid(m2.reg3) ~ c(1:nrow(reg3)), 
      xlab = "Índice", 
      ylab = "Resíduos Quantílicos",
      pch = 16, 
-     col = "#2b5c8f")
+     col = cores[1])
 qqnorm(resid(m2.reg3), 
      xlab = "Quantis teóricos", 
      ylab = "Resíduos Quantílicos",
      main = "QQ-plot dos residuos quantilicos", 
      pch = 16, 
-     col = "#2b5c8f")
+     col = cores[1])
 qqline(resid((m2.reg3)), col="coral")
 wp(m2.reg3, col = "coral", pch=16)
-mtext("Figura 2: Gráficos dos resíduos.", side = 3, line = -2, outer = TRUE)
-
+mtext("Figura 2: Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
 ```
 
 * O gráfico dos resíduos pelo valores ajustados não apresenta nenhum padrão indicativo de heterocedasticidade, a suposição de homocedasticidade é atendida;
@@ -130,28 +154,39 @@ mtext("Figura 2: Gráficos dos resíduos.", side = 3, line = -2, outer = TRUE)
 
 
 ### Análise de diagnóstico
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=4, fig.height=4}
 m3.reg3 <- lm(expec ~ taxa + prope + ndazero)
 fit.model <- m3.reg3
 source("diag_cook_norm.txt")
 ```
 Hawaii é o estado que apresenta a maior distância de 
-Cook. Vamos reajustar o modelo sem essa observação para avaliar seu impacto nas estimavas.
+Cook. Analisando as medidas resumo, verificamos que ele possui uma população abaixo da média e uma proporção de analfabetos acima do 3° quartil. Ele apresenta também o maior valor para a expectativa de vida, uma porcentagem de estudantes que concluem segundo grau acima do 3° quartil e o menor valor de número de dias com temperaturas abaixo de zero, nenhum dia. Reajustamos o modelo sem essa observação para avaliar seu impacto nas estimavas e observamos o seguinte:
 
 ```{r, echo=F}
 influ<-reg3[reg3$UF!="Hawaii",]
 suppressMessages(attach(influ))
 m1.influ <- gamlss(expec ~  taxa + prope + ndazero, family=NO,trace=F)
-summary(m1.influ)
+#resumo.influ<-summary(m1.influ)
 
+
+# variacao.percentual<-abs(round((resumo.influ[,1]-resumo.m2[,1])/resumo.m2[,1],4)*100)
+# valores.p<-data.frame(covariavel=rownames(resumo.influ),`valor-p.com`=round(resumo.m2[,4],4),`valor-p.sem`=round(resumo.influ[,4],4))
+
+#reg3[reg3$UF=="Hawaii",]
+#summary(reg3)
 ```
-Retirando o estado Havaí observa-se uma redução na significância da variável *ndazero*, ela passa a ser significativa apenas ao nível de significância de 10%. As estimativas pontuais não mudam muito e para as demais covariáveis a inferência é a mesma.
+* Variações nos coeficientes estimados de 0.04% (intercepto), 3.87% (taxa), 13.04% (prope) e 28.98% (ndazero);
 
-O que fazer com a covariável ndazero??? Em um exemplo na aula o prof eliminou uma interação que só era significativa no modelo com a observação influente. Acho que aqui depende, se o nível adotado for de 10% a inferência não muda!!! 
+De acordo com o professor Gilberto, variações percentuais desproporcionais (muito acima de (1/n) × 100%) são esperadas, porém deve-se dar atenção quando ocorrerem mudanças inferenciais.
+Nesse âmbito, observou-se uma redução na significância da variável *ndazero*, foi de um valor-p de 0.0051	para 0.0555. 
+
+\newpage
 
 * **Interpretação**
 
 Como fica a homocedasticidade no caso da Poisson, a média é igual a variancia.
 
 5 páginas por questão!!!
+
+
 
