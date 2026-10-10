@@ -35,12 +35,16 @@ header-includes:
 
 ```{r setup, include=FALSE, warning=FALSE, results = 'asis', echo=FALSE}
 suppressMessages(library(gamlss))
-cores<-c("#1C3B6F","coral")
+suppressMessages(library(robustbase)) #boxplot robusto
+cores <- c("#1C3B6F", "coral","#8FA9CC","#F5B1A4")
+
 ```
 
 \newpage
 
 # Exercício 1
+
+O objetivo do estudo é explicar a *expec* média usando um modelo de regressão normal linear dadas as variáveis explicativas *renda*, *propa*, *taxa*, *prope* e *ndazero*.
 
 * **UF** (nome do estado); **pop** (população estimada em julho de 1975); **renda** (renda percapita em 1974 em USD); **propa** (proporção de analfabetos em 1970); **expec** (expectativa de vida em anos 1969-70); **taxa** (taxa de criminalidade por 100000 habitantes 1976); **prope** (porcentagem de estudantes que concluem segundo grau 1970); **ndazero** (número de dias do ano com temperatura abaixo de zero grau Celsus na cidade mais importante do estado); **area** (área do estado em milhas quadradas).
 
@@ -50,7 +54,6 @@ reg3 <- read.table("dados/reg3.txt", header=TRUE)
 attach(reg3)
 ```
 
-O objetivo do estudo é explicar a *expec* média usando um modelo de regressão normal linear dadas as variáveis explicativas *renda*, *propa*, *taxa*, *prope* e *ndazero*.
 
 ## Análise Descritiva
 
@@ -154,7 +157,7 @@ mtext("Figura 2: Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
 
 
 ### Análise de diagnóstico
-```{r, echo=FALSE, fig.width=4, fig.height=4}
+```{r, echo=FALSE, fig.width=3, fig.height=3}
 m3.reg3 <- lm(expec ~ taxa + prope + ndazero)
 fit.model <- m3.reg3
 source("diag_cook_norm.txt")
@@ -181,6 +184,107 @@ De acordo com o professor Gilberto, variações percentuais desproporcionais (mu
 Nesse âmbito, observou-se uma redução na significância da variável *ndazero*, foi de um valor-p de 0.0051	para 0.0555. 
 
 \newpage
+
+# Exercício 2
+
+O objetivo principal do estudo é relacionar a cpue média com as demais
+variáveis explicativas. 
+
+* **Periodo** (período da pesca, seco ou chuvoso); **area** (local da pesca, área1, área2, área3, área4); **mare** (maré, quadratura ou sizigia); **vvento** (velocidade do vento, em m/s); **tmax** (temperatura máxima, em °C); **tmin** (temperatura mínima, em °C); **ins** (insolação, em horas); **cpue** (captura por unidade de esforço, em kg).
+
+
+```{r, warning=FALSE, echo=FALSE}
+suppressMessages(raia <- read.table("dados/raia.txt", header=TRUE))
+raia$periodo <- factor(raia$periodo, levels=1:2, labels=c("seco",
+"chuvoso"))
+raia$area = factor(raia$area, levels=1:4, labels=c("área1",
+"área2", "área3", "área4"))
+raia$mare = factor(raia$mare, levels=1:2, labels=c("quadratura",
+"sizígia"))
+suppressMessages(attach(raia))
+```
+
+## Análise Descritiva
+```{r, echo=FALSE, warning=FALSE, fig.align='left', fig.height=5}
+options(mc_doScale_quiet=TRUE)
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(density(cpue), xlab="cpue", ylab="Densidade", main="", col=cores[1], lwd=2)
+adjbox(split(cpue,periodo),col=cores[3],
+ylab="cpue", xlab="periodo", names=levels(periodo))
+adjbox(split(cpue,area),xlab="area",col=cores[3],
+ylab="cpue", names=levels(area))
+adjbox(split(cpue,mare),col=cores[3],
+ylab="cpue", xlab="mare", names=levels(mare))
+mtext("Figura 3: Densidade cpue(painel superior à esquerda) e boxplots ajustados cpue~periodo, cpue~area e cpue~mare) ", side = 4, line = -1, outer = TRUE, cex=0.5)
+```
+Na Figura 3, observamos que a variável **cpue** apresenta uma distribuição assimétrica à direita. O período não parece impactar na captura dos peixes, observa-se uma distribuição parecida entre seco e chuvoso. As áreas 2 e 4 aparentam ter um mediana um pouco maior que as demais. A maré de sizigia (maré viva) apresenta uma mediana levemente maior que a maré de quadratura.
+
+
+
+```{r, echo=FALSE, warning=FALSE}
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8, cex.lab=0.7, cex.axis=0.7)
+plot(vvento, log(cpue), pch=16, xlab="Velocidade do vento (m/s)", ylab="Captura por unidade de esforço(kg)")
+lines(smooth.spline(vvento, log(cpue), df=4), lwd=2, col="coral")
+plot(tmax, log(cpue), pch=16, xlab="Temperatura máxima(°C)", ylab="Captura por unidade de esforço(kg)")
+lines(smooth.spline(tmax, log(cpue), df=4), lwd=2, col="coral")
+plot(tmin, log(cpue), pch=16,ylab="Captura por unidade de esforço(kg)", xlab="Temperatura mínima(°C)")
+lines(smooth.spline(tmin, log(cpue), df=4), lwd=2, col="coral")
+plot(ins, log(cpue), pch=16, ylab="Captura por unidade de esforço(kg)",  xlab="Insolaçao (horas)")
+lines(smooth.spline(ins, log(cpue), df=4), lwd=2, col="coral")
+mtext("Figura 4: Gráficos de dispersão entre log(cpue e cada variável explicativa contínua", side = 4, line = -1, outer = TRUE, cex=0.5)
+```
+Na Figura 4 é possível verificar que nenhuma das variáveis contínuas parece impactar na captura. A velocidade do vento pode indicar um efeito positivo influenciado pelo ponto que apresentou valor fora da massa de dados.
+
+## Ajuste do modelo
+* **Ajuste inicial**:
+
+\begin{align*}
+&(1)\ Y_{i} \sim Gamma(\mu_i, \sigma),\text{ em que }\\ 
+&\text{$\sigma$ é o coeficiente de variação de Y} \\
+&(2)\ \log(u_i) = \eta_i = \beta_0 + \beta_1 periodo.chuvoso + \beta_2 area_2 + \beta_3 area_3 + \beta_4 area_4 + \\ 
+& \beta_5 mare.sizígia + \beta_6 vvento + \beta_7 tmin + \beta_8 tmax + \beta_9 ins   \\
+\end{align*}
+
+```{r, echo=FALSE}
+m1.raia <- gamlss(cpue ~ periodo + area + mare + vvento + tmin + tmax + ins, family=GA)
+m2.raia <- stepGAIC(m1.raia, trace = F)
+summary(m2.raia)
+```
+
+## Análise de resíduos
+
+```{r, echo=FALSE, warning=FALSE, fig.width=8, fig.height=5}
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(resid(m2.raia) ~ predict(m2.raia), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+plot(resid(m2.raia) ~ c(1:nrow(raia)), 
+     xlab = "Índice", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+qqnorm(resid(m2.raia), 
+     xlab = "Quantis teóricos", 
+     ylab = "Resíduos Quantílicos",
+     main = "QQ-plot dos residuos quantilicos", 
+     pch = 16, 
+     col = cores[1])
+qqline(resid((m2.raia)), col="coral")
+wp(m2.raia, col = "coral", pch=16)
+mtext("Figura : Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
+```
+
+
+
+```{r}
+plot(m2.raia)
+wp(m2.raia)
+term.plot(m2.raia)
+```
+
+Comentar os resultados. Traçar num mesmo gráfico o comportamento da cpue ajustada segundo as variáveis explicativas selecionadas.
 
 * **Interpretação**
 
