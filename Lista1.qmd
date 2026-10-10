@@ -14,23 +14,23 @@ font-family: arial
 font-size: 12pt
 
 # Decomente se quiser um template bonitinho!
-
-header-includes:
-- \usepackage{xcolor}
-- \definecolor{azulime}{HTML}{1C3B6F}
-- \usepackage{hyperref}
-- \AtBeginDocument{\hypersetup{colorlinks=true, urlcolor=azulime,linkcolor=azulime, citecolor=azulime}}
-- \usepackage{fancyhdr}
-- \usepackage{graphicx}
-- \pagestyle{fancy}
-- \fancyhf{}
-- \fancyhead[R]{\includegraphics[width=2.5cm]{logo.png}}
-- \fancyfoot[R]{\thepage}
-- \renewcommand{\headrulewidth}{0pt}
-- \renewcommand{\footrulewidth}{0pt}
-- \usepackage{titling}
-- \pretitle{\begin{center}\includegraphics[width=4cm]{logo.png}\\[1cm]}
-- \posttitle{\end{center}\thispagestyle{empty}\setcounter{page}{1}}
+# 
+# header-includes:
+# - \usepackage{xcolor}
+# - \definecolor{azulime}{HTML}{1C3B6F}
+# - \usepackage{hyperref}
+# - \AtBeginDocument{\hypersetup{colorlinks=true, urlcolor=azulime,linkcolor=azulime, citecolor=azulime}}
+# - \usepackage{fancyhdr}
+# - \usepackage{graphicx}
+# - \pagestyle{fancy}
+# - \fancyhf{}
+# - \fancyhead[R]{\includegraphics[width=2.5cm]{logo.png}}
+# - \fancyfoot[R]{\thepage}
+# - \renewcommand{\headrulewidth}{0pt}
+# - \renewcommand{\footrulewidth}{0pt}
+# - \usepackage{titling}
+# - \pretitle{\begin{center}\includegraphics[width=4cm]{logo.png}\\[1cm]}
+# - \posttitle{\end{center}\thispagestyle{empty}\setcounter{page}{1}}
 ---
 
 ```{r setup, include=FALSE, warning=FALSE, results = 'asis', echo=FALSE}
@@ -239,17 +239,27 @@ Na Figura 4 é possível verificar que nenhuma das variáveis contínuas parece 
 * **Ajuste inicial**:
 
 \begin{align*}
-&(1)\ Y_{i} \sim Gamma(\mu_i, \sigma),\text{ em que }\\ 
-&\text{$\sigma$ é o coeficiente de variação de Y} \\
+&(1)\ Y_{i} \sim Gamma(\mu_i, \sigma),\text{ em que $\sigma$ é o coeficiente de variação de Y}\\
 &(2)\ \log(u_i) = \eta_i = \beta_0 + \beta_1 periodo.chuvoso + \beta_2 area_2 + \beta_3 area_3 + \beta_4 area_4 + \\ 
 & \beta_5 mare.sizígia + \beta_6 vvento + \beta_7 tmin + \beta_8 tmax + \beta_9 ins   \\
 \end{align*}
 
 ```{r, echo=FALSE}
 m1.raia <- gamlss(cpue ~ periodo + area + mare + vvento + tmin + tmax + ins, family=GA)
+```
+\begin{align*}
+&(1)\ Y_{i} \sim Gamma(\mu_i, \sigma),\text{ em que $\sigma$ é o coeficiente de variação de Y} \\
+&(2)\ \log(u_i) = \eta_i = 0.1319 + 0.6935 area_2 + 0.3459 area_3 + 0.6832 area_4 +  0.2635 mare.sizígia + 0.0735 tmax 
+\end{align*}
+
+```{r}
 m2.raia <- stepGAIC(m1.raia, trace = F)
 summary(m2.raia)
 ```
+* Interpretação:
+!!!!!!!!!!!!!
+
+
 
 ## Análise de resíduos
 
@@ -276,21 +286,142 @@ wp(m2.raia, col = "coral", pch=16)
 mtext("Figura : Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
 ```
 
-
-
-```{r}
-plot(m2.raia)
-wp(m2.raia)
-term.plot(m2.raia)
+```{r, echo=FALSE}
+par(mfrow=c(1,3), mar=c(5,4,1,2), cex.main=0.8)
+term.plot(m2.raia, ask=F)
 ```
 
-Comentar os resultados. Traçar num mesmo gráfico o comportamento da cpue ajustada segundo as variáveis explicativas selecionadas.
+```{r}
+tem.min <- seq(from = min(tmin), to = max(tmin), length.out = 200)
 
+covariaveis <- expand.grid(
+  tmin.2 = tem.min,
+  area.2 = levels(area),
+  mare.2 = levels(mare)       
+)
+str(covariaveis)
+
+  
+
+```
+
+
+# Exercício 3
+
+```{r, echo=FALSE}
+pima <- read.table("dados/npima.txt", header=TRUE)
+summary(pima)
+pima$diabetes = factor(pima$diabetes)
+levels(pima$diabetes) = c("Negativo","Positivo")
+attach(pima)
+```
+
+Inicialmente fazer uma análise descritiva por meio de boxplots comparando os dois grupos de interesse com relação a diabetes, positivo e negativo, para cada variável explicativa. Como há variáveis explicativas assimétricas usar o boxplot robusto que ajusta a indicação de pontos extremos. Por exemplo, para a variável explicativa glucose use
+os comandos
+```{r, echo=FALSE}
+require(robustbase)
+par(mfrow=c(3,2), mar=c(4,4,3,2))
+adjbox(split(glucose,diabetes),col="gray",
+main="", xlab="diabetes", ylab="glucose")
+
+adjbox(split(pregnant,diabetes),col="gray",
+main="", xlab="diabetes", ylab="pregnant")
+
+adjbox(split(mass,diabetes),col="gray",
+main="",xlab="diabetes", ylab="mass")
+
+adjbox(split(pedigree,diabetes),col="gray",
+main="", xlab="diabetes", ylab="pedigree")
+
+adjbox(split(age,diabetes),col="gray",
+main="", xlab="diabetes", ylab="age")
+mtext("Figura :  Boxplots comparando diabetes (positivo e negativo), para cada variável explicativa", side=4, line = -1, outer = TRUE, cex=0.6)
+```
+Mulheres que apresentam um valor maior de mediana para as corvariáveis glucose, pregant, mass e age podem estar associadas a uma maior chance de possuir a doença.
+
+Ajustar um modelo logístico binomial aos dados para explicar a probabilidade de diagnóstico positivo de diabetes dadas as demais variáveis explicativas. Escrever o modelo. Usar o comando stepGAIC do
+GAMLSS para fazer uma seleção de variáveis explicativas.
+
+* Ajuste inicial:
+
+\begin{align*}
+&(1)\ Y_{i} \sim Binomial(n,\mu_i) \\
+&(2)\ log\left(\frac{\mu_i}{1-\mu_i}\right) = \beta_0 + \beta_1 pregnant + \beta_2 glucose + \beta_3 mass + \beta_4 pedigree + \beta_5 age
+\end{align*}
+
+```{r}
+m1.pima <- gamlss(diabetes ~ pregnant + glucose + mass + pedigree+age, family = BI, trace=F)
+```
+
+* Ajuste Final:
+
+\begin{align*}
+&(1)\ Y_{i} \sim Binomial(n,\mu_i) \\
+&(2)\ log\left(\frac{\mu_i}{1-\mu_i}\right) = -9.082422 + 0.135906    pregnant + 0.036807 glucose + 0.086165  mass + 0.929365 pedigree 
+\end{align*}
+
+```{r, echo=FALSE}
+m2.pima <- stepGAIC(m1.pima)
+summary(m2.pima)
+```
+
+Todas as covariáveis selecionadas pelo AIC foram significativas a um nível de 5%.
 * **Interpretação**
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no número de vezes que engravidou aumenta em 14% a chance de ter diabetes.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade na concentração de glicose no plasma aumenta em 3.7% a chance de ter diabetes.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no índice de massa corporal aumenta em 9% a chance de ter diabetes.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no pedigree aumenta em 153% a chance de ter diabetes.
+
+
+## Análise de resíduos
+
+```{r, echo=FALSE, warning=FALSE, fig.width=8, fig.height=5}
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(resid(m2.raia) ~ predict(m2.raia), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+plot(resid(m2.raia) ~ c(1:nrow(raia)), 
+     xlab = "Índice", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+qqnorm(resid(m2.raia), 
+     xlab = "Quantis teóricos", 
+     ylab = "Resíduos Quantílicos",
+     main = "QQ-plot dos residuos quantilicos", 
+     pch = 16, 
+     col = cores[1])
+qqline(resid((m2.raia)), col="coral")
+#wp(m2.raia, col = "coral", pch=16)
+mtext("Figura : Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
+rqres.plot(m2.pima, howmany=50, plot="all")
+```
+* O gráfico dos resíduos pelo valores ajustados não apresenta nenhum padrão indicativo de heterocedasticidade, a suposição de homocedasticidade é atendida;
+
+* O gráfico dos resíduos pelo índice das observações não apresenta padrões indicativos de dependência entre os resíduos;
+
+* Os gráficos dos resíduos comparados com os quantis da normal(qq-plot e wormplot) não apresentam grandes desvios da normalidade. A suposição de normalidade pode ser considerada adequada.
+
+
+```{r, echo=FALSE}
+term.plot(m2.pima, pages=1)
+```
+Todos os efeitos parciais são positivos.
+
+
+\newpage
 
 Como fica a homocedasticidade no caso da Poisson, a média é igual a variancia.
 
 5 páginas por questão!!!
+
+
 
 
 
