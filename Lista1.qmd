@@ -313,6 +313,7 @@ pima <- read.table("dados/npima.txt", header=TRUE)
 summary(pima)
 pima$diabetes = factor(pima$diabetes)
 levels(pima$diabetes) = c("Negativo","Positivo")
+
 attach(pima)
 ```
 
@@ -345,7 +346,7 @@ GAMLSS para fazer uma seleção de variáveis explicativas.
 * Ajuste inicial:
 
 \begin{align*}
-&(1)\ Y_{i} \sim Binomial(n,\mu_i) \\
+&(1)\ Y_{i} \sim Bernoulli(\mu_i) \\
 &(2)\ log\left(\frac{\mu_i}{1-\mu_i}\right) = \beta_0 + \beta_1 pregnant + \beta_2 glucose + \beta_3 mass + \beta_4 pedigree + \beta_5 age
 \end{align*}
 
@@ -356,7 +357,7 @@ m1.pima <- gamlss(diabetes ~ pregnant + glucose + mass + pedigree+age, family = 
 * Ajuste Final:
 
 \begin{align*}
-&(1)\ Y_{i} \sim Binomial(n,\mu_i) \\
+&(1)\ Y_{i} \sim Bernoulli(n,\mu_i) \\
 &(2)\ log\left(\frac{\mu_i}{1-\mu_i}\right) = -9.082422 + 0.135906    pregnant + 0.036807 glucose + 0.086165  mass + 0.929365 pedigree 
 \end{align*}
 
@@ -415,9 +416,155 @@ term.plot(m2.pima, pages=1)
 Todos os efeitos parciais são positivos.
 
 
+
+
+```{r}
+m3.pima = gamlss(diabetes ~ pregnant + pb(glucose) + pb(mass)
++ pb(pedigree) + pb(age), family = BI)
+m4.pima = stepGAIC(m3.pima)
+summary(m4.pima)
+plot(m4.pima)
+rqres.plot(m4.pima, howmany=50, plot="all")
+term.plot(m4.pima, pages=1)
+
+```
+
+```{r}
+require(pROC)
+resp = diabetes
+pred.pima = predict(m4.pima, type="response")
+roc.pima = roc(response = resp, predictor = pred.pima)
+plot(roc.pima, main = "Curva Roc - pima", print.auc = TRUE)
+optimal_coords = coords(roc.pima, "best", ret = c("specificity",
+"sensitivity", "threshold"))
+print(optimal_coords)
+```
+
+# Exercício 4
+
+
+```{r}
+require(pscl)
+summary(bioChemists)
+attach(bioChemists)
+
+table(art,fem)
+table(art,mar)
+
+tabela.total.linhas<-prop.table(table(art,fem), margin=1)*100
+
+round(tabela.total.linhas,3)
+
+
+tabela.total.linhas2<-prop.table(table(art,mar), margin=1)*100
+
+t(round(tabela.total.linhas2,3))
+
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(table(art),lwd=2)
+plot(kid5,art, pch=16)
+plot(phd,art,pch=16)
+plot(ment,art,pch=16)
+par(mfrow=c(1,1))
+```
+
+* Ajuste inicial:
+
+\begin{align*}
+&(1)\ Y_{i} \sim Poisson(\mu_i) \\
+&(2)\ log(\mu_i) = \beta_0 + \beta_1 fem + \beta_2 mar + \beta_3 kid5 + \beta_4 phd + \beta_5 ment
+\end{align*}
+
+```{r}
+m1.bio = gamlss(art ~ ., family=PO, data=bioChemists)
+```
+
+
+```{r}
+m2.bio = stepGAIC(m1.bio)
+summary(m2.bio)
+```
+* Ajuste Final:
+
+\begin{align*}
+&(1)\ Y_{i} \sim Poisson(\mu_i) \\
+&(2)\ log(\mu_i) = 0.345174 -0.225303fem + 0.152175mar -0.184993kid5 +  0.025761ment
+\end{align*}
+
+
+* **Interpretação**
+
+* Um homem solteiro, sem filhos, cujo orientador não pubiblicou nenhum artigo, publica em média 1.41 artigos.
+
+* Mantendo as demais covariáveis constantes, ser do sexo feminino reduz em aproximadamente 20% o número de artigos publicados.  
+
+* Mantendo as demais covariáveis constantes, estar casado aumenta em aproximadamente 16% o número de artigos publicados.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no número de filhos reduz em 17% o número de artigos publicados.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no número de artigos publicados pelo orientador aumenta em aproximadamente 3% o número de artigos publicados pelo doutor.
+
+
+```{r}
+plot(m2.bio)
+plot(resid(m2.bio) ~ predict(m2.bio), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1], xlim=c(0,2))
+
+rqres.plot(m2.bio, howmany=50, plot="all")
+```
+*  Como estamos no modelo Poisson, não temos a suposição de variância constante;
+
+* O gráfico dos resíduos pelo índice das observações apresenta um padrão bastante evidente de dependência entre os resíduos;
+
+* Os gráficos dos resíduos comparados com os quantis da normal(qq-plot e wormplot) apresentam grandes desvios da normalidade. O modelo postulado apresenta problemas.
+
+
+
+```{r}
+m3.bio = gamlss(art ~., family=NBI, data=bioChemists)
+m4.bio = stepGAIC(m3.bio)
+summary(m4.bio)
+plot(m4.bio)
+plot(resid(m4.bio) ~ predict(m4.bio), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1], xlim=c(0,2))
+rqres.plot(m4.bio, howmany=50, plot="all")
+```
+```{r}
+term.plot(m4.bio, terms=1)
+term.plot(m4.bio, terms=2)
+term.plot(m4.bio, terms=3)
+term.plot(m4.bio, terms=4)
+```
+```{r}
+resumo<-summary(m4.bio)
+
+LI<-exp(resumo[,1]-1.96*resumo[,2])
+LS<-exp(resumo[,1]+1.96*resumo[,2])
+
+```
+* Interpretação:
+
+* Um homem solteiro, sem filhos, cujo orientador não pubiblicou nenhum artigo, publica em média 1.35 artigos. (IC,95%) = [1.15250; 1.59153] 
+
+* Mantendo as demais covariáveis constantes, ser do sexo feminino reduz em aproximadamente 20% o número de artigos publicados. (IC,95%) = [; ] 
+
+* Mantendo as demais covariáveis constantes, estar casado aumenta em aproximadamente 16% o número de artigos publicados.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no número de filhos reduz em 17% o número de artigos publicados.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no número de artigos publicados pelo orientador aumenta em aproximadamente 3% o número de artigos publicados pelo doutor.
+
 \newpage
 
-Como fica a homocedasticidade no caso da Poisson, a média é igual a variancia.
 
 5 páginas por questão!!!
 
