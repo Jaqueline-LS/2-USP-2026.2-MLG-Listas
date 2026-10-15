@@ -37,6 +37,8 @@ header-includes:
 suppressMessages(library(gamlss))
 suppressMessages(library(robustbase)) #boxplot robusto
 cores <- c("#1C3B6F", "coral","#8FA9CC","#F5B1A4")
+paleta <- c("#6f1926", "#de324c", "#f4895f", "#f8e16f", "#95cf92", "#369acc", "#9656a2", "#cbabd1")
+suppressMessages(library("dplyr"))
 
 ```
 
@@ -55,7 +57,7 @@ attach(reg3)
 ```
 
 
-## Análise Descritiva
+## Análise descritiva
 
 ```{r, echo=FALSE}
 par(mfrow=c(3,2), mar=c(5,4,3,2))
@@ -114,7 +116,7 @@ suppressMessages(m2.reg3 <- stepGAIC(m1.reg3, trace = F))
 
 *OBS.: A saída do gamlss nos apresenta o $\log(\hat\sigma)$.*
 
-Todos os coeficientes foram significativos a um nível de signinficância de 5%. Seguem as interpretações:
+Todos os coeficientes foram significativos a um nível de signinficância de 5%, seguem as interpretações:
 
 * Espera-se que a expectativa de vida seja em média 71.04 anos para um estado em que a taxa de criminalidade é nula, a porcentagem de estudantes que concluem o ensino médio é igual a zero e nenhum dia do ano apresenta temperaturas negativas.
 
@@ -124,10 +126,8 @@ Todos os coeficientes foram significativos a um nível de signinficância de 5%.
 
 * Considerando as outras covariáveis constantes, espera-se uma redução de 0.0069 na média da expectativa de vida com o aumento de um dia nos número de dias do ano com temperaturas abaixo de zero na cidade mais importante do estado.
 
-## Validação do modelo
 
-
-### Análise de resíduos 
+## Análise de resíduos 
 ```{r, echo=FALSE, warning=FALSE, fig.width=8, fig.height=5}
 par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
 plot(resid(m2.reg3) ~ predict(m2.reg3), 
@@ -156,10 +156,10 @@ Na Figura 2 observamos que:
 
 * O gráfico dos resíduos pelo índice das observações não apresenta padrões indicativos de dependência entre eles. (Painel superior à direita)
 
-* Os gráficos dos resíduos quantílicos comparados com os quantis da normal (qq-plot e wormplot) não apresentam grandes desvios da normalidade. A suposição de normalidade pode ser considerada adequada. (Painéis inferiores da figura)
+* Os gráficos dos resíduos quantílicos comparados com os quantis da normal (qq-plot e wormplot) não apresentam grandes desvios da normalidade. A suposição de normalidade pode ser considerada adequada. (Painéis inferiores)
 
 
-### Análise de diagnóstico
+## Análise de diagnóstico
 ```{r, echo=FALSE, fig.width=4, fig.height=4}
 m3.reg3 <- lm(expec ~ taxa + prope + ndazero)
 fit.model <- m3.reg3
@@ -168,11 +168,10 @@ source("diag_cook_norm.txt")
 Na Figura 3, identificamos que *Hawaii* é o estado que apresenta a maior distância de Cook. Comparamos os valores das covariáveis do estado com as medidas resumo e observamos que ele apresenta o maior valor para a expectativa de vida e o menor valor para o número de dias com temperaturas abaixo de zero. 
 
 ```{r, echo=F}
-influ<-reg3[reg3$UF!="Hawaii",]
-suppressMessages(attach(influ))
-m1.influ <- gamlss(expec ~  taxa + prope + ndazero, family=NO,trace=F)
-resumo.influ<-summary(m1.influ)
-
+# influ<-reg3[reg3$UF!="Hawaii",]
+# suppressMessages(attach(influ))
+# m1.influ <- gamlss(expec ~  taxa + prope + ndazero, family=NO,trace=F)
+# resumo.influ<-summary(m1.influ)
 
 # variacao.percentual<-abs(round((resumo.influ[,1]-resumo.m2[,1])/resumo.m2[,1],4)*100)
 #valores.p<-data.frame(covariavel=rownames(resumo.influ),`valor-p.com`=round(resumo.m2[,4],4),`valor-p.sem`=round(resumo.influ[,4],4))
@@ -203,8 +202,8 @@ raia$mare = factor(raia$mare, levels=1:2, labels=c("quadratura",
 suppressMessages(attach(raia))
 ```
 
-## Análise Descritiva
-```{r, echo=FALSE, warning=FALSE, fig.align='left', fig.height=5}
+## Análise descritiva
+```{r, echo=FALSE, warning=FALSE, fig.align='left', fig.height=4}
 options(mc_doScale_quiet=TRUE)
 par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
 plot(density(cpue), xlab="cpue", ylab="Densidade", main="", col=cores[1], lwd=2)
@@ -214,13 +213,12 @@ adjbox(split(cpue,area),xlab="area",col=cores[3],
 ylab="cpue", names=levels(area))
 adjbox(split(cpue,mare),col=cores[3],
 ylab="cpue", xlab="mare", names=levels(mare))
-mtext("Figura 3: Densidade cpue(painel superior à esquerda) e boxplots ajustados cpue~periodo, cpue~area e cpue~mare) ", side = 4, line = -1, outer = TRUE, cex=0.5)
+mtext("Figura 4: Densidade cpue(painel superior à esquerda) e boxplots ajustados cpue~periodo, cpue~area e cpue~mare) ", side = 3, line = -1, outer = TRUE, cex=0.5)
 ```
-Na Figura 3, observamos que a variável **cpue** apresenta uma distribuição assimétrica à direita. O período não parece impactar na captura dos peixes, observa-se uma distribuição parecida entre seco e chuvoso. As áreas 2 e 4 aparentam ter um mediana um pouco maior que as demais. A maré de sizigia (maré viva) apresenta uma mediana levemente maior que a maré de quadratura.
+Na Figura 4, observamos que a variável **cpue** apresenta uma distribuição assimétrica à direita. Apesar da mediana para o período seco ser sutilmente maior, a covariável não parece impactar na captura dos peixes, pois observa-se uma distribuição parecida entre as categorias. As áreas 2 e 4 apresentam a mediana um pouco maior que as demais áreas. A maré de sizigia (maré viva) apresenta a mediana levemente maior que a maré de quadratura.
 
 
-
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE, fig.width=5, fig.height=4}
 par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8, cex.lab=0.7, cex.axis=0.7)
 plot(vvento, log(cpue), pch=16, xlab="Velocidade do vento (m/s)", ylab="Captura por unidade de esforço(kg)")
 lines(smooth.spline(vvento, log(cpue), df=4), lwd=2, col="coral")
@@ -230,33 +228,54 @@ plot(tmin, log(cpue), pch=16,ylab="Captura por unidade de esforço(kg)", xlab="T
 lines(smooth.spline(tmin, log(cpue), df=4), lwd=2, col="coral")
 plot(ins, log(cpue), pch=16, ylab="Captura por unidade de esforço(kg)",  xlab="Insolaçao (horas)")
 lines(smooth.spline(ins, log(cpue), df=4), lwd=2, col="coral")
-mtext("Figura 4: Gráficos de dispersão entre log(cpue e cada variável explicativa contínua", side = 4, line = -1, outer = TRUE, cex=0.5)
+mtext("Figura 5: Gráficos de dispersão entre log(cpue e cada variável explicativa contínua", side = 4, line = -1, outer = TRUE, cex=0.5)
 ```
-Na Figura 4 é possível verificar que nenhuma das variáveis contínuas parece impactar na captura. A velocidade do vento pode indicar um efeito positivo influenciado pelo ponto que apresentou valor fora da massa de dados.
+Na Figura 5 é possível verificar que nenhuma das variáveis contínuas parece ter impacto na captura. As tendência aparentam ser lineares e positivas, porém são fracas.
 
 ## Ajuste do modelo
+
 * **Ajuste inicial**:
 
 \begin{align*}
-&(1)\ Y_{i} \sim Gamma(\mu_i, \sigma),\text{ em que $\sigma$ é o coeficiente de variação de Y}\\
-&(2)\ \log(u_i) = \eta_i = \beta_0 + \beta_1 periodo.chuvoso + \beta_2 area_2 + \beta_3 area_3 + \beta_4 area_4 + \\ 
+&(1)\ Y_{i} \sim Gama(\mu_i, \sigma),\text{ em que $\sigma$ é o coeficiente de variação de Y}\\
+&(2)\ \log(u_i) =  \beta_0 + \beta_1 periodo.chuvoso + \beta_2 area_2 + \beta_3 area_3 + \beta_4 area_4 + \\ 
 & \beta_5 mare.sizígia + \beta_6 vvento + \beta_7 tmin + \beta_8 tmax + \beta_9 ins   \\
 \end{align*}
 
 ```{r, echo=FALSE}
-m1.raia <- gamlss(cpue ~ periodo + area + mare + vvento + tmin + tmax + ins, family=GA)
+ m1.raia <- gamlss(cpue ~ periodo + area + mare + vvento + tmin + tmax + ins, family=GA, trace=F)
 ```
+
+* Após a seleção baseada no AIC por meio da função *stepGAIC*, temos o seguinte modelo ajustado:
+
+
+```{r, echo=FALSE}
+ m2.raia <- stepGAIC(m1.raia, trace = F)
+# coef<-summary(m2.raia)
+# exp(coef[,1])
+```
+
 \begin{align*}
-&(1)\ Y_{i} \sim Gamma(\mu_i, \sigma),\text{ em que $\sigma$ é o coeficiente de variação de Y} \\
-&(2)\ \log(u_i) = \eta_i = 0.1319 + 0.6935 area_2 + 0.3459 area_3 + 0.6832 area_4 +  0.2635 mare.sizígia + 0.0735 tmax 
+&(1)\ Y_{i} \sim Gama(\mu_i, \sigma),\text{ em que $\sigma$ é o coeficiente de variação de Y} \\
+&(2)\ \log(u_i) = 0.1319 + 0.6935 area_2 + 0.3459 area_3 + \\
+& 0.6832 area_4 +  0.2635 mare.sizígia + 0.0735 tmax 
 \end{align*}
 
-```{r}
-m2.raia <- stepGAIC(m1.raia, trace = F)
-summary(m2.raia)
-```
-* Interpretação:
-!!!!!!!!!!!!!
+A maioria dos coeficientes foram significativos a um nível de 5%, apenas o efeito da área 3 que apresentou um valor-p igual a 0.07461. A seguir temos as interpretações:
+
+
+* Para uma frota que pesca na área 1 quando a maré é classificada como de quadratura e a temperatura máxima registrada é de 0°C, espera-se que, em média, a captura por unidade de esforço seja 1.14 kg (Essa interpretação não tem relevância prática, uma temperatura máxima de 0°C não é plausível no contexto dos dados, a menor temperatura máxima registrada é de 23.2°C).  
+
+* Considerando as demais covariáveis constantes, a area 2 proporciona o dobro de captura média comparado com a área 1.
+
+* Considerando as demais covariáveis constantes, a area 3 proporciona um aumento de 41% na captura média comparado com a área 1.
+
+* Considerando as demais covariáveis constantes, a area 4 proporciona um aumento de 98% na captura média comparado com a área 1.
+
+* Considerando as demais covariáveis constantes, a maré de sizígia proporciona um aumento de 30% na captura média quando comparada com a maré de quadratura.
+
+* Considerando as demais covariáveis constantes, o aumento de 1°C na temperatura máxima aumenta a média de captura em 7.6%. 
+
 
 
 
@@ -282,38 +301,69 @@ qqnorm(resid(m2.raia),
      col = cores[1])
 qqline(resid((m2.raia)), col="coral")
 wp(m2.raia, col = "coral", pch=16)
-mtext("Figura : Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
+mtext("Figura 6: Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
 ```
 
-```{r, echo=FALSE}
+Na Figura 6 observamos que:
+
+* O gráfico dos resíduos pelo valores ajustados não apresenta nenhum padrão indicativo de heterocedasticidade, a suposição de homocedasticidade é atendida. ( Painel superior à esquerda)
+
+* O gráfico dos resíduos pelo índice das observações não apresenta padrões indicativos de dependência entre eles. (Painel superior à direita)
+
+* Os gráficos dos resíduos quantílicos comparados com os quantis da normal (qq-plot e wormplot) não apresentam grandes desvios da normalidade. A suposição de normalidade pode ser considerada adequada. (Painéis inferiores)
+
+
+```{r, echo=FALSE,fig.height=2.5, fig.width=6, fig.align='center'}
 par(mfrow=c(1,3), mar=c(5,4,1,2), cex.main=0.8)
 term.plot(m2.raia, ask=F)
+mtext("Figura 7: Gráficos dos efeitos parciais.", side = 4, line = -1, outer = TRUE, cex=0.5)
 ```
+Conforme a Figura 7, as áreas 2 e 4, bem como a maré de sizígia (em comparação à quadratura), estão associadas a maiores valores esperados de captura. Observa-se ainda que temperaturas mais elevadas exercem um efeito positivo sobre a resposta..
 
-```{r}
-tem.min <- seq(from = min(tmin), to = max(tmin), length.out = 200)
+```{r, fig.height=3.5, fig.width=6, echo=FALSE, fig.align='center'}
+tem.max <- seq(from = min(tmax), to = max(tmax), length.out=100)
 
-covariaveis <- expand.grid(
-  tmin.2 = tem.min,
-  area.2 = levels(area),
-  mare.2 = levels(mare)       
+covariaveis <- expand.grid(area = levels(area),
+  mare = levels(mare),
+  tmax = tem.max
 )
-str(covariaveis)
 
-  
+predito<-predict(m2.raia,what="mu",newdata=covariaveis , type="response", data=raia)
+
+raia.novo<-cbind(covariaveis,predito)
+
+grupos<-raia.novo |>
+  group_by(area,mare) |>
+  group_rows()
+
+par(cex.main=0.7, cex.axis=0.5, cex.lab=0.7) 
+plot(raia.novo[grupos[[1]],]$tmax, raia.novo[grupos[[1]],]$predito, type="l", 
+     lwd=3, col=paleta[1], xlab="Temperatura máxima registrada (°C)", ylab="cpue", ylim=c(0,40))
+for(i in 2:8)
+{
+  lines(raia.novo[grupos[[i]],]$tmax, raia.novo[grupos[[i]],]$predito, type="l", 
+     lwd=3, col=paleta[i], xlab="Temperatura máxima registrada (°C)", ylab="cpue")
+}
+
+nomes.grupos<-lapply(grupos, FUN=function(x)paste0(raia.novo[x[1],1],"-",raia.novo[x[1],2]))
+legend("topleft", legend=nomes.grupos,col=paleta, lwd=3, cex=0.4, bty = "n")
+mtext("Figura 8: Gráfico o comportamento da cpue ajustada segundo as variáveis explicativas selecionadas", side = 3, line = -1, outer = TRUE, cex = 0.5)
 
 ```
 
+Na Figura 8, observamos que as combinações *área2 - sizígia* e *área4 - sizígia* são as que proporcionam valores esperados maiores para a captura. 
 
+
+\newpage
 # Exercício 3
 
 ```{r, echo=FALSE}
 pima <- read.table("dados/npima.txt", header=TRUE)
-summary(pima)
+#summary(pima)
 pima$diabetes = factor(pima$diabetes)
 levels(pima$diabetes) = c("Negativo","Positivo")
 
-attach(pima)
+suppressMessages(attach(pima))
 ```
 
 Inicialmente fazer uma análise descritiva por meio de boxplots comparando os dois grupos de interesse com relação a diabetes, positivo e negativo, para cada variável explicativa. Como há variáveis explicativas assimétricas usar o boxplot robusto que ajusta a indicação de pontos extremos. Por exemplo, para a variável explicativa glucose use
