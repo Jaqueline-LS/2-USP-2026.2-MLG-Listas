@@ -15,22 +15,22 @@ font-size: 12pt
 
 # Decomente se quiser um template bonitinho!
 # 
-# header-includes:
-# - \usepackage{xcolor}
-# - \definecolor{azulime}{HTML}{1C3B6F}
-# - \usepackage{hyperref}
-# - \AtBeginDocument{\hypersetup{colorlinks=true, urlcolor=azulime,linkcolor=azulime, citecolor=azulime}}
-# - \usepackage{fancyhdr}
-# - \usepackage{graphicx}
-# - \pagestyle{fancy}
-# - \fancyhf{}
-# - \fancyhead[R]{\includegraphics[width=2.5cm]{logo.png}}
-# - \fancyfoot[R]{\thepage}
-# - \renewcommand{\headrulewidth}{0pt}
-# - \renewcommand{\footrulewidth}{0pt}
-# - \usepackage{titling}
-# - \pretitle{\begin{center}\includegraphics[width=4cm]{logo.png}\\[1cm]}
-# - \posttitle{\end{center}\thispagestyle{empty}\setcounter{page}{1}}
+header-includes:
+- \usepackage{xcolor}
+- \definecolor{azulime}{HTML}{1C3B6F}
+- \usepackage{hyperref}
+- \AtBeginDocument{\hypersetup{colorlinks=true, urlcolor=azulime,linkcolor=azulime, citecolor=azulime}}
+- \usepackage{fancyhdr}
+- \usepackage{graphicx}
+- \pagestyle{fancy}
+- \fancyhf{}
+- \fancyhead[R]{\includegraphics[width=2.5cm]{logo.png}}
+- \fancyfoot[R]{\thepage}
+- \renewcommand{\headrulewidth}{0pt}
+- \renewcommand{\footrulewidth}{0pt}
+- \usepackage{titling}
+- \pretitle{\begin{center}\includegraphics[width=4cm]{logo.png}\\[1cm]}
+- \posttitle{\end{center}\thispagestyle{empty}\setcounter{page}{1}}
 ---
 
 ```{r setup, include=FALSE, warning=FALSE, results = 'asis', echo=FALSE}
@@ -76,9 +76,9 @@ lines(smooth.spline(prope, expec, df=4), lwd=2, col="coral")
 plot(ndazero, expec, pch=16, xlab="Número de Dias do Ano", ylab="Expectativa de Vida")
 lines(smooth.spline(ndazero, expec, df=4), lwd=2, col="coral")
 
-mtext("Figura 1: Gráficos de dispersão da variável resposta pelas explicativas.", side = 3, line = -2, outer = TRUE)
+mtext("Figura 1: Gráficos de dispersão da variável resposta pelas explicativas.", side = 3, line = -2, outer = TRUE, cex=0.8)
 ```
-Pelos gráficos de dispersão conseguimos observar que:
+Pelos diagramas de dispersão, Figura 1, conseguimos observar que:
 
 * As variáveis Taxa de Criminalidade e Proporção de Analfabetos em 1970 parecem se relacionar negativamente e de forma linear com a Expectativa de Vida. 
 
@@ -100,7 +100,7 @@ Pelos gráficos de dispersão conseguimos observar que:
 suppressMessages(m1.reg3 <- gamlss(expec ~ renda + propa + taxa + prope + ndazero,family=NO, trace=F))
 ```
 
-* Após a seleção baseada no AIC, temos o seguinte modelo ajustado:
+* Após a seleção baseada no AIC por meio da função *stepGAIC*, temos o seguinte modelo ajustado:
 ```{r, echo=FALSE, warning=FALSE}
 suppressMessages(m2.reg3 <- stepGAIC(m1.reg3, trace = F))
 #resumo.m2<-summary(m2.reg3)
@@ -108,19 +108,21 @@ suppressMessages(m2.reg3 <- stepGAIC(m1.reg3, trace = F))
 
 
 \begin{align*}
-&(1)\ Y_{i} \sim N(\hat{\mu_i}, \hat\sigma^2),\hat\sigma^2=  0.5074 \\
+&(1)\ Y_{i} \sim N(\hat{\mu_i}, \hat{\sigma^2}),\hat{\sigma^2}=  0.5074 \\
 &(2)\ \hat{\mu_i} = 71.04- 0.2831 taxa + 0.0499 prope - 0.0069 ndazero \\
 \end{align*}
 
-Todos os coeficientes foram significativos a um nível de signinficância de 5%.
+*OBS.: A saída do gamlss nos apresenta o $\log(\hat\sigma)$.*
 
-* Considerando um estado em que a taxa de criminalidade é nula, a porcentagem de estudantes que concluem o ensino médio é igual a zero e nenhum dia ano apresenta temperaturas negativas na cidade mais inportante do estado. Espera-se que a expectativa de vida seja em média 71.04 anos.
+Todos os coeficientes foram significativos a um nível de signinficância de 5%. Seguem as interpretações:
+
+* Espera-se que a expectativa de vida seja em média 71.04 anos para um estado em que a taxa de criminalidade é nula, a porcentagem de estudantes que concluem o ensino médio é igual a zero e nenhum dia do ano apresenta temperaturas negativas.
 
 * Considerando as outras covariáveis constantes, ao aumentar uma unidade na taxa de criminalidade espera-se uma redução de 0.2831 na média da expectativa de vida.
 
 * Considerando as outras covariáveis constantes, ao aumentar 1% na porporção de estudantes que concluem o ensino médio espera-se observar um aumento de 0.0499 na expectativa de vida média.
 
-* Considerando as outras covariáveis constantes, com o aumento de um dia nos número de dias do ano com temperaturas abaixo de zero na cidade mais importante do estado, espera-se uma redução de 0.0069 na média da expectativa de vida.
+* Considerando as outras covariáveis constantes, espera-se uma redução de 0.0069 na média da expectativa de vida com o aumento de um dia nos número de dias do ano com temperaturas abaixo de zero na cidade mais importante do estado.
 
 ## Validação do modelo
 
@@ -141,47 +143,44 @@ plot(resid(m2.reg3) ~ c(1:nrow(reg3)),
 qqnorm(resid(m2.reg3), 
      xlab = "Quantis teóricos", 
      ylab = "Resíduos Quantílicos",
-     main = "QQ-plot dos residuos quantilicos", 
+     main="",
      pch = 16, 
      col = cores[1])
 qqline(resid((m2.reg3)), col="coral")
-wp(m2.reg3, col = "coral", pch=16)
-mtext("Figura 2: Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
+wp(m2.reg3, col = "coral", pch=16, main="Wormplot")
+mtext("Figura 2: Gráficos dos resíduos.", side = 4, line = -2, outer = TRUE, cex=0.8)
 ```
+Na Figura 2 observamos que:
 
-* O gráfico dos resíduos pelo valores ajustados não apresenta nenhum padrão indicativo de heterocedasticidade, a suposição de homocedasticidade é atendida;
+* O gráfico dos resíduos pelo valores ajustados não apresenta nenhum padrão indicativo de heterocedasticidade, a suposição de homocedasticidade é atendida. ( Painel superior à esquerda)
 
-* O gráfico dos resíduos pelo índice das observações não apresenta padrões indicativos de dependência entre os resíduos;
+* O gráfico dos resíduos pelo índice das observações não apresenta padrões indicativos de dependência entre eles. (Painel superior à direita)
 
-* Os gráficos dos resíduos comparados com os quantis da normal(qq-plot e wormplot) não apresentam grandes desvios da normalidade. A suposição de normalidade pode ser considerada adequada.
+* Os gráficos dos resíduos quantílicos comparados com os quantis da normal (qq-plot e wormplot) não apresentam grandes desvios da normalidade. A suposição de normalidade pode ser considerada adequada. (Painéis inferiores da figura)
 
 
 ### Análise de diagnóstico
-```{r, echo=FALSE, fig.width=3, fig.height=3}
+```{r, echo=FALSE, fig.width=4, fig.height=4}
 m3.reg3 <- lm(expec ~ taxa + prope + ndazero)
 fit.model <- m3.reg3
 source("diag_cook_norm.txt")
 ```
-Hawaii é o estado que apresenta a maior distância de 
-Cook. Analisando as medidas resumo, verificamos que ele possui uma população abaixo da média e uma proporção de analfabetos acima do 3° quartil. Ele apresenta também o maior valor para a expectativa de vida, uma porcentagem de estudantes que concluem segundo grau acima do 3° quartil e o menor valor de número de dias com temperaturas abaixo de zero, nenhum dia. Reajustamos o modelo sem essa observação para avaliar seu impacto nas estimavas e observamos o seguinte:
+Na Figura 3, identificamos que *Hawaii* é o estado que apresenta a maior distância de Cook. Comparamos os valores das covariáveis do estado com as medidas resumo e observamos que ele apresenta o maior valor para a expectativa de vida e o menor valor para o número de dias com temperaturas abaixo de zero. 
 
 ```{r, echo=F}
 influ<-reg3[reg3$UF!="Hawaii",]
 suppressMessages(attach(influ))
 m1.influ <- gamlss(expec ~  taxa + prope + ndazero, family=NO,trace=F)
-#resumo.influ<-summary(m1.influ)
+resumo.influ<-summary(m1.influ)
 
 
 # variacao.percentual<-abs(round((resumo.influ[,1]-resumo.m2[,1])/resumo.m2[,1],4)*100)
-# valores.p<-data.frame(covariavel=rownames(resumo.influ),`valor-p.com`=round(resumo.m2[,4],4),`valor-p.sem`=round(resumo.influ[,4],4))
+#valores.p<-data.frame(covariavel=rownames(resumo.influ),`valor-p.com`=round(resumo.m2[,4],4),`valor-p.sem`=round(resumo.influ[,4],4))
 
 #reg3[reg3$UF=="Hawaii",]
 #summary(reg3)
 ```
-* Variações nos coeficientes estimados de 0.04% (intercepto), 3.87% (taxa), 13.04% (prope) e 28.98% (ndazero);
-
-De acordo com o professor Gilberto, variações percentuais desproporcionais (muito acima de (1/n) × 100%) são esperadas, porém deve-se dar atenção quando ocorrerem mudanças inferenciais.
-Nesse âmbito, observou-se uma redução na significância da variável *ndazero*, foi de um valor-p de 0.0051	para 0.0555. 
+Reajustamos o modelo sem essa observação para avaliar seu impacto nas estimativas e observamos as seguintes variações nos coeficientes estimados: 0.04% (intercepto), 3.87% (taxa), 13.04% (prope) e 28.98% (ndazero). De acordo com o professor Gilberto, variações percentuais desproporcionais (muito acima de (1/n) × 100%) são esperadas, porém deve-se dar atenção quando ocorrerem mudanças inferenciais. Nesse âmbito, observou-se uma redução na significância da variável *ndazero*, foi de um valor-p de 0.0051	para 0.0555. Portanto, o efeito da covariável *ndazero* deve ser interpretado com cuidado caso o pesquisador defenda a permanência dessa covariável no modelo.
 
 \newpage
 

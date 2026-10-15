@@ -18,6 +18,7 @@ di =  (1/p)*(h/(1-h))*(ts^2)
 plot(di,xlab="Indice", ylab="Distancia de Cook", pch=16, cex=0.8,cex.lab=0.8, cex.axis=0.8)
 cut = mean(di) + 4*sd(di)
 abline(cut,0,lty=2,lwd=2, col="coral")
+mtext("Figura 3: Gráfico da Distância de Cook pelo índice das observações.", side = 4, line = -2, outer = TRUE, cex=0.5)
 # Comando para ser acionado com n sendo o numero de pontos destacados
 identify(di, n=1, cex=2, label=UF)
 #------------------------------------------------------------------------------------------#
