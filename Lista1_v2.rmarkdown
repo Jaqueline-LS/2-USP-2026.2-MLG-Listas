@@ -1,0 +1,824 @@
+---
+title: "Lista 1 - Prática - MAE5763"
+author: "Jaqueline Lamas (17646475) \n Maia Ugarte (12558568)"
+format: 
+    pdf:
+      fig-width: 5
+      fig-height: 4
+      fig-align: center
+      number-sections: true
+editor: source
+logo: logo.png
+toc: true
+toc-title: "Sumário"
+font-family: arial
+font-size: 10pt
+lg: pt
+
+# Decomente se quiser um template bonitinho!
+# 
+header-includes:
+- \usepackage{xcolor}
+- \definecolor{azulime}{HTML}{1C3B6F}
+- \usepackage{hyperref}
+- \AtBeginDocument{\hypersetup{colorlinks=true, urlcolor=azulime,linkcolor=azulime, citecolor=azulime}}
+- \usepackage{fancyhdr}
+- \usepackage{graphicx}
+- \pagestyle{fancy}
+- \fancyhf{}
+- \fancyhead[R]{\includegraphics[width=2.5cm]{logo.png}}
+- \fancyfoot[R]{\thepage}
+- \renewcommand{\headrulewidth}{0pt}
+- \renewcommand{\footrulewidth}{0pt}
+- \usepackage{titling}
+- \pretitle{\begin{center}\includegraphics[width=4cm]{logo.png}\\[1cm]}
+- \posttitle{\end{center}\thispagestyle{empty}\setcounter{page}{1}}
+---
+
+```{r setup, include=FALSE, warning=FALSE, results = 'asis', echo=FALSE}
+suppressMessages(library(gamlss))
+suppressMessages(library(robustbase)) #boxplot robusto
+cores <- c("#1C3B6F", "coral","#8FA9CC","#F5B1A4")
+paleta <- c("#6f1926", "#de324c", "#f4895f", "#f8e16f", "#95cf92", "#369acc", "#9656a2", "#cbabd1")
+suppressMessages(library("dplyr"))
+
+```
+
+\newpage
+
+# Exercício 1
+
+O objetivo do estudo é explicar a *expec* média usando um modelo de regressão normal linear dadas as variáveis explicativas *renda*, *propa*, *taxa*, *prope* e *ndazero*.
+
+* **UF** (nome do estado); **pop** (população estimada em julho de 1975); **renda** (renda percapita em 1974 em USD); **propa** (proporção de analfabetos em 1970); **expec** (expectativa de vida em anos 1969-70); **taxa** (taxa de criminalidade por 100000 habitantes 1976); **prope** (porcentagem de estudantes que concluem segundo grau 1970); **ndazero** (número de dias do ano com temperatura abaixo de zero grau Celsus na cidade mais importante do estado); **area** (área do estado em milhas quadradas).
+
+```{r, echo=FALSE}
+reg3 <- read.table("dados/reg3.txt", header=TRUE)
+#summary(reg3)
+attach(reg3)
+```
+
+
+## Análise descritiva
+
+```{r, echo=FALSE, fig.align='center', fig.height=5, fig.width=5}
+par(mfrow=c(3,2), mar=c(5,4,3,2))
+plot(renda, expec, pch=16, xlab="Renda Per Capita",
+     ylab="Expectativa de Vida")
+lines(smooth.spline(renda, expec, df=4), lwd=2, col="coral")
+
+plot(propa, expec, pch=16, xlab="Proporção de analfabetos em 1970",ylab="Expectativa de Vida")
+lines(smooth.spline(propa, expec, df=4), lwd=2, col="coral")
+
+plot(taxa, expec, pch=16, xlab="Taxa de Criminalidade",
+     ylab="Expectativa de Vida")
+lines(smooth.spline(taxa, expec, df=4), lwd=2, col="coral")
+
+plot(prope, expec, pch=16, xlab="Porcentagem que Concluem Segundo Grau",ylab="Expectativa de Vida")
+lines(smooth.spline(prope, expec, df=4), lwd=2, col="coral")
+
+plot(ndazero, expec, pch=16, xlab="Número de Dias do Ano", ylab="Expectativa de Vida")
+lines(smooth.spline(ndazero, expec, df=4), lwd=2, col="coral")
+
+mtext("Figura 1: Gráficos de dispersão da variável resposta pelas explicativas.", side = 3, line = -1, outer = TRUE, cex=0.8)
+```
+Pelos diagramas de dispersão, Figura 1, conseguimos observar que:
+
+* As variáveis *Taxa de Criminalidade* e *Proporção de Analfabetos em 1970* parecem se relacionar negativamente e de forma linear com a *Expectativa de Vida*. 
+
+* A variável *Porcentagem de Estudantes que Conluem o Ensino Médio* parece estar relacionada com a resposta por meio de uma curva, com uma tendência positiva.
+
+* As variável *Renda* e *Número de Dias do Ano com Temperaturas* abaixo de zero aparenta se relacionar com a resposta por meio de uma curva.
+
+
+## Ajuste do modelo
+
+* **Ajuste inicial**:
+
+\begin{align*}
+&(1)\ Y_{i} \sim N(\mu_i, \sigma^2)\\
+&(2)\ \mu_i = \beta_0 + \beta_1 renda + \beta_2 propa + \beta_3 taxa + \beta_4 prope + \beta_5 ndazero \\
+\end{align*}
+
+```{r, echo=FALSE, warning=FALSE}
+suppressMessages(m1.reg3 <- gamlss(expec ~ renda + propa + taxa + prope + ndazero,family=NO, trace=F))
+```
+
+* Após a seleção baseada no AIC por meio da função *stepGAIC*, temos o seguinte modelo ajustado:
+```{r, echo=FALSE, warning=FALSE}
+suppressMessages(m2.reg3 <- stepGAIC(m1.reg3, trace = F))
+#resumo.m2<-summary(m2.reg3)
+```
+
+\begin{align*}
+&(1)\ Y_{i} \sim N(\hat{\mu_i}, \hat{\sigma^2}),\hat{\sigma^2}=  0.5074 \\
+&(2)\ \hat{\mu_i} = 71.04 - 0.2831 taxa + 0.0499 prope - 0.0069 ndazero \\
+\end{align*}
+
+*OBS.: A saída do gamlss nos apresenta o $\log(\hat\sigma)$.*
+
+Todos os coeficientes foram significativos a um nível de signinficância de 5%, seguem as interpretações:
+
+* Espera-se que a expectativa de vida seja em média 71.04 anos para um estado em que a taxa de criminalidade é nula, a porcentagem de estudantes que concluem o ensino médio é igual a zero e nenhum dia do ano apresenta temperaturas negativas. (Essa interpretação não tem relevância prática, pois esses valores para as covariáveis, apesar de possíveis, são pouco prováveis de acontecer na prática)
+
+* Considerando as outras covariáveis constantes, ao aumentar uma unidade na taxa de criminalidade espera-se uma redução de 0.2831 na média da expectativa de vida.
+
+* Considerando as outras covariáveis constantes, ao aumentar 1% na proporção de estudantes que concluem o ensino médio espera-se observar um aumento de 0.0499 na expectativa de vida média.
+
+* Considerando as outras covariáveis constantes, espera-se uma redução de 0.0069 na média da expectativa de vida com o aumento de um dia nos número de dias do ano com temperaturas abaixo de zero na cidade mais importante do estado.
+
+
+## Análise de resíduos 
+```{r, echo=FALSE, warning=FALSE, fig.width=8, fig.height=5}
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(resid(m2.reg3) ~ predict(m2.reg3), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+plot(resid(m2.reg3) ~ c(1:nrow(reg3)), 
+     xlab = "Índice", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+qqnorm(resid(m2.reg3), 
+     xlab = "Quantis teóricos", 
+     ylab = "Resíduos Quantílicos",
+     main="",
+     pch = 16, 
+     col = cores[1])
+qqline(resid((m2.reg3)), col="coral")
+wp(m2.reg3, col = "coral", pch=16, main="Wormplot")
+mtext("Figura 2: Gráficos dos resíduos.", side = 4, line = -1, outer = TRUE, cex=0.8)
+```
+Na Figura 2 observamos que:
+
+* O gráfico dos resíduos pelo valores ajustados não apresenta nenhum padrão indicativo de heterocedasticidade, a suposição de homocedasticidade é atendida. ( Painel superior à esquerda)
+
+* O gráfico dos resíduos pelo índice das observações não apresenta padrões indicativos de dependência entre eles. (Painel superior à direita)
+
+* Os gráficos dos resíduos quantílicos comparados com os quantis da normal (qq-plot e wormplot) não apresentam grandes desvios da normalidade. A suposição de normalidade pode ser considerada adequada. (Painéis inferiores)
+
+
+## Análise de diagnóstico
+```{r, echo=FALSE, fig.width=4, fig.height=4}
+m3.reg3 <- lm(expec ~ taxa + prope + ndazero)
+fit.model <- m3.reg3
+source("diag_cook_norm.txt")
+```
+Na Figura 3, identificamos que *Hawaii* é o estado que apresenta a maior distância de Cook. Comparamos os valores das covariáveis do estado com as medidas resumo e observamos que ele apresenta o maior valor para a expectativa de vida e o menor valor para o número de dias com temperaturas abaixo de zero. 
+
+```{r, echo=F}
+# influ<-reg3[reg3$UF!="Hawaii",]
+# suppressMessages(attach(influ))
+# m1.influ <- gamlss(expec ~  taxa + prope + ndazero, family=NO,trace=F)
+# resumo.influ<-summary(m1.influ)
+
+# variacao.percentual<-abs(round((resumo.influ[,1]-resumo.m2[,1])/resumo.m2[,1],4)*100)
+#valores.p<-data.frame(covariavel=rownames(resumo.influ),`valor-p.com`=round(resumo.m2[,4],4),`valor-p.sem`=round(resumo.influ[,4],4))
+
+#reg3[reg3$UF=="Hawaii",]
+#summary(reg3)
+```
+Reajustamos o modelo sem essa observação para avaliar seu impacto nas estimativas e observamos as seguintes variações nos coeficientes estimados: 0.04% (intercepto), 3.87% (taxa), 13.04% (prope) e 28.98% (ndazero). De acordo com o professor Gilberto, variações percentuais desproporcionais (muito acima de (1/n) × 100%) são esperadas, porém deve-se dar atenção quando ocorrerem mudanças inferenciais. Nesse âmbito, observou-se uma redução na significância da variável *ndazero*, foi de um valor-p de 0.0051	para 0.0555. Portanto, o efeito da covariável *ndazero* deve ser interpretado com cuidado caso o pesquisador defenda a permanência dessa covariável no modelo.
+
+\newpage
+
+# Exercício 2
+
+O objetivo principal do estudo é relacionar a cpue média com as demais variáveis explicativas. 
+
+* **Periodo** (período da pesca, seco ou chuvoso); **area** (local da pesca, área1, área2, área3, área4); **mare** (maré, quadratura ou sizigia); **vvento** (velocidade do vento, em m/s); **tmax** (temperatura máxima, em °C); **tmin** (temperatura mínima, em °C); **ins** (insolação, em horas); **cpue** (captura por unidade de esforço, em kg).
+
+
+```{r, warning=FALSE, echo=FALSE}
+suppressMessages(raia <- read.table("dados/raia.txt", header=TRUE))
+raia$periodo <- factor(raia$periodo, levels=1:2, labels=c("seco",
+"chuvoso"))
+raia$area = factor(raia$area, levels=1:4, labels=c("área1",
+"área2", "área3", "área4"))
+raia$mare = factor(raia$mare, levels=1:2, labels=c("quadratura",
+"sizígia"))
+suppressMessages(attach(raia))
+```
+
+## Análise descritiva
+```{r, echo=FALSE, warning=FALSE, fig.align='left', fig.height=5}
+options(mc_doScale_quiet=TRUE)
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(density(cpue), xlab="cpue", ylab="Densidade", main="", col=cores[1], lwd=2)
+adjbox(split(cpue,periodo),col=cores[3],
+ylab="cpue", xlab="periodo", names=levels(periodo))
+adjbox(split(cpue,area),xlab="area",col=cores[3],
+ylab="cpue", names=levels(area))
+adjbox(split(cpue,mare),col=cores[3],
+ylab="cpue", xlab="mare", names=levels(mare))
+mtext("Figura 4: Densidade cpue(painel superior à esquerda) e boxplots ajustados cpue~periodo, cpue~area e cpue~mare) ", side = 3, line = 0, outer = TRUE, cex=0.5)
+```
+Na Figura 4, observamos que a variável **cpue** apresenta uma distribuição assimétrica à direita. Apesar da mediana para o período seco ser sutilmente maior, a covariável não parece impactar na captura dos peixes, pois observa-se uma distribuição parecida entre as categorias. As áreas 2 e 4 apresentam a mediana um pouco maior que as demais áreas. A maré de sizigia (maré viva) apresenta a mediana levemente maior que a maré de quadratura.
+
+
+```{r, echo=FALSE, warning=FALSE, fig.width=5, fig.height=5}
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8, cex.lab=0.7, cex.axis=0.7)
+plot(vvento, log(cpue), pch=16, xlab="Velocidade do vento (m/s)", ylab="Captura por unidade de esforço(kg)")
+lines(smooth.spline(vvento, log(cpue), df=4), lwd=2, col="coral")
+plot(tmax, log(cpue), pch=16, xlab="Temperatura máxima(°C)", ylab="Captura por unidade de esforço(kg)")
+lines(smooth.spline(tmax, log(cpue), df=4), lwd=2, col="coral")
+plot(tmin, log(cpue), pch=16,ylab="Captura por unidade de esforço(kg)", xlab="Temperatura mínima(°C)")
+lines(smooth.spline(tmin, log(cpue), df=4), lwd=2, col="coral")
+plot(ins, log(cpue), pch=16, ylab="Captura por unidade de esforço(kg)",  xlab="Insolaçao (horas)")
+lines(smooth.spline(ins, log(cpue), df=4), lwd=2, col="coral")
+mtext("Figura 5: Gráficos de dispersão entre log(cpue e cada variável explicativa contínua", side = 4, line = -1, outer = TRUE, cex=0.5)
+```
+Na Figura 5 é possível verificar que nenhuma das variáveis contínuas parece ter impacto na captura. As tendência aparentam ser lineares e positivas, porém são fracas.
+
+## Ajuste do modelo
+
+* **Ajuste inicial**:
+\begin{align*}
+&(1)\ Y_{i} \sim Gama(\mu_i, \sigma),\text{ em que $\sigma$ é o coeficiente de variação de Y}\\
+&(2)\ \log(u_i) =  \beta_0 + \beta_1 periodo.chuvoso + \beta_2 area_2 + \beta_3 area_3 + \beta_4 area_4 + \\ 
+& \beta_5 mare.sizígia + \beta_6 vvento + \beta_7 tmin + \beta_8 tmax + \beta_9 ins   \\
+\end{align*}
+
+```{r, echo=FALSE}
+ m1.raia <- gamlss(cpue ~ periodo + area + mare + vvento + tmin + tmax + ins, family=GA, trace=F)
+```
+
+\newpage
+
+* Após a seleção baseada no AIC por meio da função *stepGAIC*, temos o seguinte modelo ajustado:
+
+
+```{r, echo=FALSE}
+ m2.raia <- stepGAIC(m1.raia, trace = F)
+# coef<-summary(m2.raia)
+# exp(coef[,1])
+```
+
+\begin{align*}
+&(1)\ Y_{i} \sim Gama(\mu_i, \sigma),\text{ em que $\sigma$ é o coeficiente de variação de Y} \\
+&(2)\ \log(u_i) = 0.1319 + 0.6935 area_2 + 0.3459 area_3 + \\
+& 0.6832 area_4 +  0.2635 mare.sizígia + 0.0735 tmax 
+\end{align*}
+
+A maioria dos coeficientes foram significativos a um nível de 5%, apenas o efeito da área 3 que apresentou um valor-p igual a 0.07461. A seguir temos as interpretações:
+
+
+* Para uma frota que pesca na área 1 quando a maré é classificada como de quadratura e a temperatura máxima registrada é de 0°C, espera-se que, em média, a captura por unidade de esforço seja 1.14 kg (Essa interpretação não tem relevância prática, uma temperatura máxima de 0°C não é plausível no contexto dos dados, a menor temperatura máxima registrada é de 23.2°C).  
+
+* Considerando as demais covariáveis constantes, a area 2 proporciona o dobro de captura média comparado com a área 1.
+
+* Considerando as demais covariáveis constantes, a area 3 proporciona um aumento de 41% na captura média comparado com a área 1.
+
+* Considerando as demais covariáveis constantes, a area 4 proporciona um aumento de 98% na captura média comparado com a área 1.
+
+* Considerando as demais covariáveis constantes, a maré de sizígia proporciona um aumento de 30% na captura média quando comparada com a maré de quadratura.
+
+* Considerando as demais covariáveis constantes, o aumento de 1°C na temperatura máxima aumenta a média de captura em 7.6%. 
+
+
+
+
+## Análise de resíduos
+
+```{r, echo=FALSE, warning=FALSE, fig.width=8, fig.height=5}
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(resid(m2.raia) ~ predict(m2.raia), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+plot(resid(m2.raia) ~ c(1:nrow(raia)), 
+     xlab = "Índice", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+qqnorm(resid(m2.raia), 
+     xlab = "Quantis teóricos", 
+     ylab = "Resíduos Quantílicos",
+     main = "QQ-plot dos residuos quantilicos", 
+     pch = 16, 
+     col = cores[1])
+qqline(resid((m2.raia)), col="coral")
+wp(m2.raia, col = "coral", pch=16)
+mtext("Figura 6: Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
+```
+
+Na Figura 6 observamos que:
+
+* O gráfico dos resíduos pelo valores ajustados não apresenta nenhum padrão indicativo de heterocedasticidade, a suposição de homocedasticidade é atendida. ( Painel superior à esquerda)
+
+* O gráfico dos resíduos pelo índice das observações não apresenta padrões indicativos de dependência entre eles. (Painel superior à direita)
+
+* Os gráficos dos resíduos quantílicos comparados com os quantis da normal (qq-plot e wormplot) não apresentam grandes desvios da normalidade. A suposição de normalidade pode ser considerada adequada. (Painéis inferiores)
+
+
+```{r, echo=FALSE,fig.height=2.5, fig.width=6, fig.align='center'}
+par(mfrow=c(1,3), mar=c(5,4,1,2), cex.main=0.8)
+term.plot(m2.raia, ask=F)
+mtext("Figura 7: Gráficos dos efeitos parciais.", side = 4, line = -1, outer = TRUE, cex=0.5)
+```
+Conforme a Figura 7, as áreas 2 e 4, bem como a maré de sizígia (em comparação à quadratura), estão associadas a maiores valores esperados de captura. Observa-se ainda que temperaturas mais elevadas exercem um efeito positivo sobre a resposta..
+
+```{r, fig.height=3.5, fig.width=6, echo=FALSE, fig.align='center'}
+tem.max <- seq(from = min(tmax), to = max(tmax), length.out=100)
+
+covariaveis <- expand.grid(area = levels(area),
+  mare = levels(mare),
+  tmax = tem.max
+)
+
+predito<-predict(m2.raia,what="mu",newdata=covariaveis , type="response", data=raia)
+
+raia.novo<-cbind(covariaveis,predito)
+
+grupos<-raia.novo |>
+  group_by(area,mare) |>
+  group_rows()
+
+par(cex.main=0.7, cex.axis=0.5, cex.lab=0.7) 
+plot(raia.novo[grupos[[1]],]$tmax, raia.novo[grupos[[1]],]$predito, type="l", 
+     lwd=3, col=paleta[1], xlab="Temperatura máxima registrada (°C)", ylab="cpue", ylim=c(0,40))
+for(i in 2:8)
+{
+  lines(raia.novo[grupos[[i]],]$tmax, raia.novo[grupos[[i]],]$predito, type="l", 
+     lwd=3, col=paleta[i], lty=c(1,1,1,2,1,1,1,2)[i], xlab="Temperatura máxima registrada (°C)", ylab="cpue")
+}
+
+nomes.grupos<-lapply(grupos, FUN=function(x)paste0(raia.novo[x[1],1],"-",raia.novo[x[1],2]))
+legend("topleft", legend=nomes.grupos,col=paleta, lwd=3, cex=0.5, bty = "n", lty=c(1,1,1,2,1,1,1,2))
+mtext("Figura 8: Gráfico o comportamento da cpue ajustada segundo as variáveis explicativas selecionadas", side = 3, line = -3, outer = TRUE, cex = 0.7)
+
+```
+
+Na Figura 8, observamos que as combinações *área2 - sizígia* e *área4 - sizígia* são as que proporcionam valores esperados maiores para a captura. 
+
+
+\newpage
+# Exercício 3
+Neste estudo a variável resposta de principal interesse é o diagnóstico de diabetes (1: negativo,
+2: positivo), que será relacionada com as seguintes variáveis explicativas: *pregnant* (número de vezes que engravidou); *glucose* (concentração de glicose no plasma); *mass* (índice de massa corporal); *pedigree* (função de pedigree de diabetes, medida hereditária de diabetes); *age* (idade em anos).
+
+```{r, echo=FALSE}
+pima <- read.table("dados/npima.txt", header=TRUE)
+#summary(pima)
+pima$diabetes = factor(pima$diabetes)
+levels(pima$diabetes) = c("Negativo","Positivo")
+
+suppressMessages(attach(pima))
+```
+
+## Análise descritiva
+
+Avaliando o comportamento das variáveis explicativas em relação à variável resposta do diagnóstico de diabetes, em mulheres descendentes do povo nativo Pima, podemos observar que
+
+ * A concentração de glicose no plasma apresenta a separação mais evidente entre os dois diagnósticos, a mediana da concentração é maior no grupo positivo.
+ 
+ * A mediana do índice de massa corporal em ambos diagnósticos é próxima, ainda que o grupo com diabetes apresente valores visivelmente maiores.
+ 
+ * Mulheres com o diagnóstico positivo apresentam, de modo geral, mais gestações. Além disso, há uma maior dispersão do número de gestações no grupo positivo.
+ 
+ * O grupo negativo é composto majoritariamente por mulheres mais jovens, com a mediana abaixo de 30.
+ 
+ * A função de pedigree de diabetes não possui grande separação evidente, há uma sobreposição dos valores em ambos os grupos, ainda que a mediana das mulheres com o diagnóstico positivo seja levemente maior.
+ 
+```{r, echo=FALSE,fig.width=6, fig.height=2.6}
+require(robustbase)
+par(mfrow=c(2,3), mar=c(4,4,3,1), cex.main=1, cex.lab=0.8, cex.axis=0.8)
+cores_esteticas = c("#E7969C", "#8C96C6") 
+nomes_eixo = c("Negativo", "Positivo")
+
+adjbox(split(pregnant, diabetes), names=nomes_eixo, col=cores_esteticas, main="Gestação", ylab="Número de Gestações", border="gray30", outcol="gray50", pch=16)
+adjbox(split(glucose, diabetes), names=nomes_eixo, col=cores_esteticas, main="Glicose", ylab="Concentração no Plasma", border="gray30", outcol="gray50", pch=16)
+adjbox(split(mass, diabetes), names=nomes_eixo, col=cores_esteticas, main="Massa Corporal", ylab="Índice de Massa Corporal", border="gray30", outcol="gray50", pch=16)
+adjbox(split(pedigree, diabetes), names=nomes_eixo, col=cores_esteticas, main="Pedigree", ylab="Função de Pedigree", border="gray30", outcol="gray50", pch=16)
+adjbox(split(age, diabetes), names=nomes_eixo, col=cores_esteticas, main="Idade", ylab="Anos", border="gray30", outcol="gray50", pch=16)
+
+par(mfrow=c(1,1), bg="white")
+mtext("Boxplots comparando diabetes, para cada variável explicativa", side=4, line = -1, outer = TRUE, cex=0.5)
+```
+## Ajuste do modelo
+
+Ajustamos um modelo logístico binomial aos dados para explicar a probabilidade $\pi$ de diagnóstico positivo de diabetes.
+
+* Ajuste inicial:
+\begin{align*}
+&(1)\ Y_{i} \sim Bernoulli(\pi_i) \\
+&(2)\ log\left(\frac{\pi_i}{1-\pi_i}\right) = \beta_0 + \beta_1 pregnant + \beta_2 glucose + \beta_3 mass + \beta_4 pedigree + \beta_5 age
+\end{align*}
+
+```{r}
+#| include: false
+m1.pima <- gamlss(diabetes ~ pregnant + glucose + mass + pedigree+age, family = BI, trace=F)
+```
+
+* Ajuste Final:
+
+Usando o `stepGAIC`, obtemos o seguinte modelo, em que a variável explicativa da idade foi removida pois o AIC apresentou melhoria. As demais variáveis explicativas são todas estatísticamente significativas. Também podemos observar que todos os coeficientes são positivos, o aumento em qualquer covariável resulta em um aumento no logito, que traduz em um aumento na chance da paciente ser diagnosticada com diabetes.
+\begin{align*}
+&(1)\ Y_{i} \sim Bernoulli(n,\pi_i) \\
+&(2)\ log\left(\frac{\pi_i}{1-\pi_i}\right) =  -9.082 + 0.136 \text{pregnant} + 0.037 \text{glucose} + 0.086 \text{mass} + 0.929 \text{pedigree} 
+\end{align*}
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+m2.pima <- stepGAIC(m1.pima)
+summary(m2.pima)
+```
+
+Todas as covariáveis selecionadas possuem coeficientes estatísticamente significativos a um nível de 5%.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no número de gestações aumenta em 14.6% a chance de ter diabetes.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade na concentração de glicose no plasma aumenta em 3.7% a chance de ter diabetes.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no índice de massa corporal aumenta em 9% a chance de ter diabetes.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no pedigree aumenta em 153.3% a chance de ter diabetes.
+
+
+## Análise de resíduos
+
+```{r}
+#| echo: false
+#| fig-width: 7
+#| fig-height: 4.5
+#| out-width: "70%"
+#| fig-align: center
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(resid(m2.pima) ~ predict(m2.pima), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+plot(resid(m2.pima) ~ c(1:nrow(pima)), 
+     xlab = "Índice", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+qqnorm(resid(m2.pima), 
+     xlab = "Quantis teóricos", 
+     ylab = "Resíduos Quantílicos",
+     main = "QQ-plot dos residuos quantilicos", 
+     pch = 16, 
+     col = cores[1])
+qqline(resid((m2.pima)), col="coral")
+mtext("Figura : Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
+rqres.plot(m2.pima, howmany=50, plot="all")
+```
+Os gráficos dos resíduos pelos valores ajustados e pelo índice não apresentam nenhum padrão indicativo de heterocedasticidade ou dependência. Além disso, o qq-plot e o wormplot não apresentam grandes desvios de normalidade. A suposição de normalidade pode ser considerada adequada.
+
+
+```{r}
+#| echo: false
+#| fig-width: 7
+#| fig-height: 5
+#| out-width: "60%"
+#| fig-align: center
+term.plot(m2.pima, pages=1)
+```
+Todos os efeitos parciais são lineares e positivos.
+
+## Ajuste do modelo com splines
+
+Reajustamos o modelo por meio de P-spline, ajustando as 4 variáveis explicativas contínuas com B-splines de 20 nós internos.
+
+```{r}
+#| include: false
+m3.pima = gamlss(diabetes ~ pregnant + pb(glucose) + pb(mass)
++ pb(pedigree) + pb(age), family = BI)
+m4.pima = stepGAIC(m3.pima)
+summary(m4.pima)
+```
+Usando splines, a seleção de variáveis por meio do `stepGAIC` removeu a variável pregnant uma vez que melhorou o AIC de 681.61 para 681.13. O modelo selecionado apresenta um ajuste melhor do que o modelo anterior (com as variáveis explicativas contínuas ajustadas de forma linear), cujo AIC foi de 714. Note que a variável de idade age foi mantida neste caso, indicando que o risco associado à idade é melhor compreendido quando a mesma entra no modelo de forma não linear. 
+
+```{r}
+#| echo: false
+#| fig-width: 7
+#| fig-height: 4.5
+#| out-width: "70%"
+#| fig-align: center
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(resid(m4.pima) ~ predict(m4.pima), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+plot(resid(m4.pima) ~ c(1:nrow(pima)), 
+     xlab = "Índice", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+qqnorm(resid(m4.pima), 
+     xlab = "Quantis teóricos", 
+     ylab = "Resíduos Quantílicos",
+     main = "QQ-plot dos residuos quantilicos", 
+     pch = 16, 
+     col = cores[1])
+qqline(resid((m4.pima)), col="coral")
+mtext("Figura : Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
+rqres.plot(m4.pima, howmany=50, plot="all")
+```
+Os gráficos dos resíduos pelos valores ajustados e pelo índice não apresentam nenhum padrão indicativo de heterocedasticidade ou dependência. Além disso, o qq-plot e o wormplot não apresentam grandes desvios de normalidade. A suposição de normalidade pode ser considerada adequada.
+
+```{r}
+#| echo: false
+#| fig-width: 7
+#| fig-height: 4.5
+#| out-width: "60%"
+#| fig-align: center
+term.plot(m4.pima, pages=1)
+```
+
+A introdução de splines mostra que as variáveis mass, age e pedigree possuem comportamento não linear em relação ao diagnóstico de diabetes. Apenas a variável glicose permaneceu com efeito linear. As variáveis age e pedigree tem um comportamento parabólico, com efeito reduzido nas extremidades. Por fim, a variável mass tem um efeito não linear evidente, o risco aumenta rapidamente, cai levemente e depois aumenta denovo.
+
+
+```{r}
+#| include: false
+require(pROC)
+resp = diabetes
+pred.pima = predict(m4.pima, type="response")
+roc.pima = roc(response = resp, predictor = pred.pima)
+
+```
+
+Abaixo podemos observar um AUC de 0.864, que caracteriza um classificador muito bom. O modelo de P-splines tem uma alta capacidade de discriminação dos pacientes com ou sem diabetes. O threshold ótimo é de 0.32, ao usar esse limiar para classificar um diagnóstico como positivo obtemos uma taxa alta de 0.837 de verdadeiros positivos, indicando que o modelo identifica corretamente 83.7% das mulheres com diagnóstico de diabetes positivo. Além disso, com o limiar ótimo a especifidade é igual a 0.752, ou seja, o modelo é capaz de classificar corretamente como negativo 75.2% dos casos verdadeiramente negativos (mulheres saudáveis), e, consequentemente, 24.8% de falsos positivos, isto é, mulheres saudáveis que recebem o diagnóstico positivo incorreto.
+
+
+```{r}
+#| echo: false
+#| fig-width: 4
+#| fig-height: 3
+#| out-width: "50%"
+#| fig-align: center
+plot(roc.pima, main = "Curva Roc - pima", print.auc = TRUE)
+optimal_coords = coords(roc.pima, "best", ret = c("specificity",
+"sensitivity", "threshold"))
+
+
+```
+
+```{r}
+#| echo: false
+#print(optimal_coords)
+
+```
+
+# Exercício 4
+
+O objetivo do estudo é explicar o número médio de artigos publicados nos últimos 3 anos pelo doutor dadas as variáveis explicativas: *art* (número de artigos publicados nos últimos 3 anos pelo doutor), *fem* (fator indicando gênero, masculino ou feminino), *mar* (fator indicando o estado civil, casado ou solteiro), *kid5* (número de crianças com até 5 anos), *phd* (prestígio do departamento onde o aluno fez o doutorado), *ment* (número de artigos publicados pelo orientador).
+
+## Análise descritiva
+
+A distribuição do número de artigos publicados é assimétrica à direita, característica de dados de contagem. Além disso, a maioria dos doutores no banco de dados publicou entre 0 e 2 artigos apenas e 275 indivíduos publicaram exatamente 0, que corresponde a 30% do banco de dados. Também temos alguns outliers com mais de 15 artigos publicados. Dos 9 indivíduos que publicaram mais de 7 artigos, apenas um é mulher e todos são casados. Temos uma amostra desbalanceada em relação à variável *mar*, apenas 1/3 da amostra tem estado civil de solteiro e portanto possui menos representação nas publicações dos artigos.
+
+```{r}
+#| include: false
+require(gamlss)
+require(pscl)
+summary(bioChemists)
+attach(bioChemists)
+
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-align: center
+#| fig-height: 3
+#| fig-width: 4
+#| out-width: 70%
+
+#artigos vs genero 
+#knitr::kable(t(addmargins(table(art, fem))), caption = "Tabela de contingência número deartigos publicados por gênero.")
+
+tab <- table(fem, art)
+prop_tab <- prop.table(tab, margin = 1) * 100
+
+prop_tab <- cbind(prop_tab, Total = rowSums(prop_tab))
+prop_tab <- round(prop_tab, 2)
+
+prop_tab %>%
+  knitr::kable(
+    format = "latex", escape = FALSE, booktabs=T, caption = "Tabela das proporções por linhas"
+  ) %>%
+  kableExtra::kable_styling(font_size = 8, latex_options = c("hold_position", "scale_down")) %>%
+  kableExtra::add_header_above(c("Gênero" = 1, "Número de Artigos" = ncol(prop_tab) - 1, " " = 1))
+```
+Pela Tabela 1, observa-se indícios de que as mulheres estão mais propensas a não ter artigos publicados (33.02%) do que os homens (27.53%).
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-align: center
+#| fig-height: 3
+#| fig-width: 4
+#| out-width: 70%
+# artigos vs estado civil
+tab <- table(mar, art)
+prop_tab <- prop.table(tab, margin = 1) * 100
+
+prop_tab <- cbind(prop_tab, Total = rowSums(prop_tab))
+prop_tab <- round(prop_tab, 2)
+
+prop_tab %>%
+  knitr::kable(
+    format = "latex", escape = FALSE, booktabs=T, caption = "Tabela das proporções por linhas"
+  ) %>%
+  kableExtra::kable_styling(font_size = 8, latex_options = c("hold_position", "scale_down")) %>%
+  kableExtra::add_header_above(c("Estado Civil" = 1, "Número de Artigos" = ncol(prop_tab) - 1, " " = 1))
+```
+Pela Tabela 2, observa-se que o grupo dos solteiros parece mais propenso a não ter artigos publicados (32.04%) do que os casados (29.04%).
+
+O gráfico de dispersão do número de artigos contra o número de filhos com menos de 5 anos sugere um impacto no volume de publicações, indivíduos com mais filhos pequenos publicam menos. Não aparenta haver uma relação muito forte entre o prestígio da instituição e o número de publicações, ambos os extremos do prestígio possuem alta e baixa produtividade. No entanto, a produtividade do orientador aparenta ter uma relação com a produtividade do orientado, quanto mais o orientador publica há uma tendência do orientado publicar mais. 
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| fig-align: center
+#| fig-height: 3
+#| fig-width: 4
+#| out-width: 70%
+par(mfrow=c(2,2), mar=c(4,4,3,1), cex.main=0.6, cex.lab=0.8, cex.axis=0.5)
+plot(table(art), lwd=3, col="#8C96C6", main="Distribuição de artigos publicados", xlab="Número de artigos", ylab="Frequência")
+plot(kid5, art, pch=16, col=rgb(0.2, 0.4, 0.6, alpha=0.5), main="Artigos vs filhos < 5 anos", xlab="Nº de Crianças", ylab="Artigos")
+plot(phd, art, pch=16, col=rgb(0.6, 0.2, 0.4, alpha=0.5), main="Artigos vs prestígio do doutorado", xlab="Prestígio", ylab="Artigos")
+plot(ment, art, pch=16, col=rgb(0.2, 0.6, 0.4, alpha=0.5), main="Artigos vs publicações do orientador", xlab="Artigos do Orientador", ylab="Artigos")
+par(mfrow=c(1,1))
+```
+
+## Ajuste do modelo Poisson
+
+* Ajuste inicial:
+\begin{align*}
+&(1)\ Y_{i} \sim Poisson(\mu_i) \\
+&(2)\ log(\mu_i) = \beta_0 + \beta_1 fem + \beta_2 mar + \beta_3 kid5 + \beta_4 phd + \beta_5 ment
+\end{align*}
+
+```{r}
+#| include: false
+m1.bio = gamlss(art ~ ., family=PO, data=bioChemists)
+m2.bio = stepGAIC(m1.bio)
+summary(m2.bio)
+```
+
+* Ajuste Final:
+\begin{align*}
+&(1)\ Y_{i} \sim Poisson(\mu_i) \\
+&(2)\ log(\mu_i) = 0.345174 -0.225303fem + 0.152175mar -0.184993kid5 +  0.025761ment
+\end{align*}
+
+* Um homem solteiro, sem filhos, cujo orientador não pubiblicou nenhum artigo, publica em média 1.41 artigos.
+
+* Mantendo as demais covariáveis constantes, ser do sexo feminino reduz em aproximadamente 20% o número de artigos publicados.  
+
+* Mantendo as demais covariáveis constantes, estar casado aumenta em aproximadamente 16% o número de artigos publicados.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no número de filhos reduz em 17% o número de artigos publicados.
+
+* Mantendo as demais covariáveis constantes, o aumento de uma unidade no número de artigos publicados pelo orientador aumenta em aproximadamente 3% o número de artigos publicados pelo doutor.
+
+
+```{r}
+#| echo: false
+#| fig-width: 7
+#| fig-height: 4.5
+#| out-width: "70%"
+#| fig-align: center
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(resid(m2.bio) ~ predict(m2.bio), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+plot(resid(m2.bio) ~ c(1:nrow(bioChemists)), 
+     xlab = "Índice", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+qqnorm(resid(m2.bio), 
+     xlab = "Quantis teóricos", 
+     ylab = "Resíduos Quantílicos",
+     main = "QQ-plot dos residuos quantilicos", 
+     pch = 16, 
+     col = cores[1])
+qqline(resid((m2.bio)), col="coral")
+mtext("Figura : Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
+rqres.plot(m2.bio, howmany=50, plot="all")
+```
+
+A análise dos resíduos quantílicos indica que o modelo Poisson apresenta sérios problemas de ajuste. O gráfico contra os valores ajustados revela uma dispersão desproporcional com resíduos positivos muito elevados e o gráfico dos resíduos pelo índice das observações apresenta uma curva, indicando problema de superdispersão. Além disso, os gráficos dos resíduos comparados com os quantis da normal (qq-plot e wormplot) apresentam grandes desvios da normalidade. O modelo postulado apresenta problemas.
+
+
+## Ajuste do modelo log-linear
+
+
+* Ajuste:
+\begin{align*}
+&(1)\ Y_{i} \sim BN(\mu_i, \phi) \\
+&(2)\ log(\mu_i) = \beta_0 + \beta_1 fem_i + \beta_2 mar_i + \beta_3 kid5_i + \beta_4 phd_i + \beta_5 ment_i
+\end{align*}
+
+```{r}
+#| include: false
+m3.bio = gamlss(art ~ ., family=NBI, data=bioChemists)
+m4.bio = stepGAIC(m3.bio)
+summary(m4.bio)
+```
+
+
+```{r}
+#| echo: false
+#| fig-width: 7
+#| fig-height: 4.5
+#| out-width: "70%"
+#| fig-align: center
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(resid(m4.bio) ~ predict(m4.bio), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+plot(resid(m4.bio) ~ c(1:nrow(bioChemists)), 
+     xlab = "Índice", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+qqnorm(resid(m4.bio), 
+     xlab = "Quantis teóricos", 
+     ylab = "Resíduos Quantílicos",
+     main = "QQ-plot dos residuos quantilicos", 
+     pch = 16, 
+     col = cores[1])
+qqline(resid((m4.bio)), col="coral")
+mtext("Figura : Gráficos dos resíduos.", side = 3, line = -1, outer = TRUE)
+rqres.plot(m4.bio, howmany=50, plot="all")
+```
+
+Embora a estrutura de dispersão nos valores ajustados e o padrão do índice aparentam ser semelhantes aos do modelo Poisson, a substituição pela distribuição binomial negativa trouxe uma ganho no ajuste global. Houve uma redução na escala dos resíduos quantílicos, que não atingem mais valores extremos observados no modelo anterior. A introdução de $\phi$ como um parâmetro de dispersão trata o problema de superdispersão do modelo de Poisson. Além disso, o qq-plot e o wormplot melhoraram significativamente e não apresentam grandes desvios. Portanto a suposição de normalidade pode ser considerada adequada. Por esses motivos, escolhemos o modelo binomial negativo como a melhor opção.
+
+
+
+```{r}
+#| echo: false
+#| fig-width: 7
+#| fig-height: 4.5
+#| out-width: "70%"
+#| fig-align: center
+
+par(mfrow = c(2, 2))
+term.plot(m4.bio, terms = 1)
+term.plot(m4.bio, terms = 2)
+term.plot(m4.bio, terms = 3)
+term.plot(m4.bio, terms = 4)
+par(mfrow = c(1, 1))
+```
+No gráfico acima, podemos observar o impacto parcial de cada covariável sobre o preditor linear. Para o gênero (fem), há um degrau evidente da categoria de homens para mulheres, o que indica uma menor expectativa de publicações para as mulheres quando as demais covariáveis são mantidas constantes. O estado civil (mar) apresenta um salto positivo, indicando que estar casado se associa a mais publicações. O número de filhos com menos de 5 anos (kid5) apresenta uma reta decrescente, ou seja, o efeito é negativo e logo quanto mais filhos, menos publicações. Por fim, o volume de publicações do orientador tem um efeito positivo, quanto mais o orientador publica, maior é o número esperado de artigos do doutor orientado.
+
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+b <- coef(m4.bio, what = "mu")
+EP <- sqrt(diag(vcov(m4.bio, what = "mu")))
+
+RM <- exp(b)
+LI <- exp(b - 1.96 * EP)
+LS <- exp(b + 1.96 * EP)
+
+#round(cbind(RM, LI, LS), 3)
+```
+
+
+* Um homem solteiro, sem crianças de até 5 anos, cujo orientador não publicou nenhum artigo, publica em média 1.354 artigos. (IC 95%) = [1.153; 1.592].
+
+* Mulheres apresentam uma média esperada de artigos aproximadamente 19.5% menor que homens, mantendo as demais variáveis constantes. Como o intervalo de confiança não contém 1, essa diferença é estatisticamente significativa ao nível de 5%. (IC 95%) = [0.698; 0.928].
+
+* Doutores casados apresentam uma média esperada de artigos aproximadamente 15.8% maior que doutores solteiros, mantendo as demais variáveis constantes. No entanto, como o intervalo de confiança contém 1, a diferença não é estatisticamente significativa ao nível de 5%. (IC 95%) = [0.987; 1.359].
+
+* Para cada criança adicional de até 5 anos, a média esperada de artigos diminui aproximadamente 16.2%, mantendo as demais variáveis constantes. Como o intervalo de confiança não contém 1, essa associação é estatisticamente significativa ao nível de 5%. (IC 95%) = [0,755; 0,930].
+
+* Para cada artigo adicional publicado pelo orientador, a média esperada de artigos do doutor aumenta aproximadamente 3%, mantendo as demais variáveis constantes. Como o intervalo de confiança não contém 1, essa associação é estatisticamente significativa ao nível de 5%. (IC 95%) = [1.023; 1.037].
+
+
+\newpage
+
+
+# Declaração de contribuição
+
+Declaramos que ambas as participantes da dupla contribuíram para a conclusão deste trabalho. Os exercícios 1 e 2 foram redigidos pela Jaqueline e revisados pela Maia. Já os exercícios 3 e 4 foram desenvolvidos pela Maia e revisados pela Jaqueline. 
+
+# Códigos
+
+Os códigos estão disponíveis no repositório do github: (https://github.com/Jaqueline-LS/2-USP-2026.2-MLG-Listas)
+
+
+
+
+
