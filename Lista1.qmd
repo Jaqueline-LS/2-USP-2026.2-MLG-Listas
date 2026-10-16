@@ -320,7 +320,7 @@ mtext("Figura 7: Gráficos dos efeitos parciais.", side = 4, line = -1, outer = 
 ```
 Conforme a Figura 7, as áreas 2 e 4, bem como a maré de sizígia (em comparação à quadratura), estão associadas a maiores valores esperados de captura. Observa-se ainda que temperaturas mais elevadas exercem um efeito positivo sobre a resposta..
 
-```{r, fig.height=3.5, fig.width=6, echo=FALSE, fig.align='center'}
+```{r, fig.height=3.8, fig.width=6, echo=FALSE, fig.align='center'}
 tem.max <- seq(from = min(tmax), to = max(tmax), length.out=100)
 
 covariaveis <- expand.grid(area = levels(area),
@@ -342,11 +342,12 @@ plot(raia.novo[grupos[[1]],]$tmax, raia.novo[grupos[[1]],]$predito, type="l",
 for(i in 2:8)
 {
   lines(raia.novo[grupos[[i]],]$tmax, raia.novo[grupos[[i]],]$predito, type="l", 
-     lwd=3, col=paleta[i], xlab="Temperatura máxima registrada (°C)", ylab="cpue")
+     lwd=3, col=paleta[i], xlab="Temperatura máxima registrada (°C)", ylab="cpue",
+     lty=c(1,1,1,2,1,1,1,1,1)[i])
 }
 
 nomes.grupos<-lapply(grupos, FUN=function(x)paste0(raia.novo[x[1],1],"-",raia.novo[x[1],2]))
-legend("topleft", legend=nomes.grupos,col=paleta, lwd=3, cex=0.4, bty = "n")
+legend("topleft", legend=nomes.grupos,col=paleta, lwd=3, cex=0.5, bty = "n", lty=c(1,1,1,2,1,1,1,2))
 mtext("Figura 8: Gráfico o comportamento da cpue ajustada segundo as variáveis explicativas selecionadas", side = 3, line = -1, outer = TRUE, cex = 0.5)
 
 ```
@@ -614,9 +615,9 @@ LS<-exp(resumo[,1]+1.96*resumo[,2])
 
 \newpage
 
-
-5 páginas por questão!!!
-
+# Anexos
+Os códigos estão disponíveis em:
+https://github.com/Jaqueline-LS/2-USP-2026.2-MLG-Listas
 
 
 
