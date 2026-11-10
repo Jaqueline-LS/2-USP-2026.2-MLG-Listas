@@ -1,0 +1,81 @@
+---
+title: "Lista 1 - Prática - MAE5763"
+author: "Jaqueline Lamas (17646475) \n Maia Ugarte (12558568)"
+format: 
+    pdf:
+      fig-width: 5
+      fig-height: 4
+      fig-align: center
+      number-sections: true
+editor: source
+logo: logo.png
+toc: true
+toc-title: "Sumário"
+font-family: arial
+font-size: 10pt
+lg: pt
+
+# Decomente se quiser um template bonitinho!
+# 
+header-includes:
+- \usepackage{xcolor}
+- \definecolor{azulime}{HTML}{1C3B6F}
+- \usepackage{hyperref}
+- \AtBeginDocument{\hypersetup{colorlinks=true, urlcolor=azulime,linkcolor=azulime, citecolor=azulime}}
+- \usepackage{fancyhdr}
+- \usepackage{graphicx}
+- \pagestyle{fancy}
+- \fancyhf{}
+- \fancyhead[R]{\includegraphics[width=2.5cm]{logo.png}}
+- \fancyfoot[R]{\thepage}
+- \renewcommand{\headrulewidth}{0pt}
+- \renewcommand{\footrulewidth}{0pt}
+- \usepackage{titling}
+- \pretitle{\begin{center}\includegraphics[width=4cm]{logo.png}\\[1cm]}
+- \posttitle{\end{center}\thispagestyle{empty}\setcounter{page}{1}}
+---
+
+
+```{r setup, include=FALSE, warning=FALSE, results = 'asis', echo=FALSE}
+suppressMessages(library(gamlss))
+suppressMessages(library(robustbase)) #boxplot robusto
+cores <- c("#1C3B6F", "coral","#8FA9CC","#F5B1A4")
+paleta <- c("#6f1926", "#de324c", "#f4895f", "#f8e16f", "#95cf92", "#369acc", "#9656a2", "#cbabd1")
+suppressMessages(library("dplyr"))
+
+```
+
+\newpage
+
+# Exercício 1
+São descritas 9 variáveis observadas numa amostra aleatória de 1967 unidades habitacionais da cidade de Munich em 1993. (i) R (valor mensal líquido do aluguel em DM), (ii) Fl (área útil em $m^2$), (iii) A (ano da construção), (iv) H (variável binária referente à existência de aquecimento central, 0: sim, 1: não) e (v) loc (qualidade da localização do imóvel, 1: abaixo da média, 2: na média e 3: acima da média. Neste estudo, queremos explicar o valor do aluguel por meio das demais variáveis.
+
+```{r, echo=FALSE, warning=FALSE}
+suppressMessages(attach(rent))
+
+loc<-factor(loc)
+```
+
+## Análise Descritiva
+
+```{r, echo=FALSE, fig.align='center', fig.width=5,fig.height=5}
+options(mc_doScale_quiet=TRUE)
+par(mfrow=c(3,2), mar=c(5,4,3,2))
+plot(density(R),main="")
+plot(Fl, R, pch=16, xlab=expression("Área últil em"~m^2),
+     ylab="Valor do Aluguel")
+lines(smooth.spline(Fl, R, df=4), lwd=2, col="coral")
+
+plot(A, R, pch=16, xlab="Ano da construção",
+     ylab="Valor do Aluguel")
+lines(smooth.spline(A, R, df=4), lwd=2, col="coral")
+
+adjbox(split(R,H),col=cores[3],
+ylab="Valor do Aluguel", xlab="Aquecimento central", names=c("sim","não"))
+
+adjbox(split(R,loc),col=cores[3],
+ylab="Valor do Aluguel", xlab="Qualidade da localização", names=c("abaixo da média","na média","acima da média"))
+
+mtext("Figura 1: Densidade da variável resposta e gráficos de dispersão da variável resposta pelas explicativas.", side = 3, line = -1, outer = TRUE, cex=0.5)
+```
+
