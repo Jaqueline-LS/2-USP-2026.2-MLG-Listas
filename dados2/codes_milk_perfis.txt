@@ -1,0 +1,43 @@
+## pacotes
+library(gamlss)
+library(ggplot2)
+library(FSA)
+library(gridExtra)
+
+## leitura dos dados
+dados <- Milk
+
+## graficos de perfis
+p2 <- ggplot(dados, aes(x=as.factor(Time), y=protein, fill=Diet)) +
+   geom_boxplot() + 
+   xlab("Semana") + ylab("Proteína") + 
+   scale_fill_manual(name = "Dieta:", values = c("barley" = "red", "barley+lupins" = "green", "lupins" = "blue"), labels = c("cevada", "cevada+tremoços", "tremoços")) +
+   theme_light() +
+   theme(text = element_text(size=20), legend.position = "top")
+
+p3 <- ggplot(dados, aes(x=Time, y=protein, colour=Diet)) +
+   geom_line(aes(group=Cow)) +
+   xlab("Semana") + ylab("Proteína") + 
+   scale_colour_manual(name = "Dieta:", values = c("barley" = "red", "barley+lupins" = "green", "lupins" = "blue"), labels = c("cevada", "cevada+tremoços", "tremoços")) +
+   theme_light() +
+   theme(text = element_text(size=20), legend.position = "top")
+
+p4 <- ggplot(dados) +
+   geom_smooth(formula=y~x, aes(x=Time, y=protein, colour=Diet), method="loess", se=FALSE, span=1) +
+   xlab("Semana") + ylab("Proteína") + 
+   scale_colour_manual(name = "Dieta:", values = c("barley" = "red", "barley+lupins" = "green", "lupins" = "blue"), labels = c("cevada", "cevada+tremoços", "tremoços")) +
+   theme_light() +
+   theme(text = element_text(size=20), legend.position = "top")
+
+dados_plot <- Summarize(protein ~ Time + Diet, data=dados)
+dados_plot$se <- dados_plot$sd/sqrt(dados_plot$n)
+p5 <-ggplot(dados_plot, aes(x=Time, y=mean, colour=Diet)) +
+   geom_line(position = position_dodge(.2), linewidth=1) +
+   geom_point(size  = 2, position = position_dodge(.2)) +
+   geom_errorbar(aes(ymin  = mean - se, ymax  = mean + se), width = 0.5, linewidth  = 1, position = position_dodge(.2)) +
+   xlab("Semana") + ylab("Proteína") + 
+   scale_colour_manual(name = "Dieta:", values = c("barley" = "red", "barley+lupins" = "green", "lupins" = "blue"), labels = c("cevada", "cevada+tremoços", "tremoços")) +
+   theme_light() +
+   theme(text = element_text(size=20), legend.position = "top")
+
+grid.arrange(p2, p3, p4, p5, nrow=2)
