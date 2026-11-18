@@ -87,7 +87,7 @@ boxplot(R ~ H, main="Aluguel vs Aquecimento", xlab="Aquecimento", ylab="Aluguel 
 
 boxplot(R ~ loc, main="Aluguel vs Localização", xlab="Localização", ylab="Aluguel (DM)", col=c("lightblue", "lightyellow", "lightcoral"))
 
-mtext("Figura 1: Densidade da variável resposta e gráficos de dispersão da variável resposta pelas explicativas.", side = 3, line = -1, outer = TRUE, cex=0.5)
+mtext("Densidade da variável resposta e gráficos de dispersão da variável resposta pelas explicativas.", side = 3, line = -1, outer = TRUE, cex=0.5)
 ```
 
 ## Modelo
@@ -176,17 +176,17 @@ kable(tabela_sigma, caption = "Estimativas e razão de médias para a dispersão
 
 A análise dos efeitos parciais revela como cada covariável influencia simultaneamente a média e a variabilidade do aluguel. Na média, a área útil tem um efeito linear positivo e contínuo, a ausência de aquecimento é um fator de forte desvalorização, e a qualidade da localização eleva o preço de forma progressiva ao passar da localização abaixo da média para acima da média. O ano de construção tem um comportamento não linear, mantendo-se estável para imóveis antigos, mas apresentando um forte crescimento para construções a partir da década de 1960. Em contrapartida, os efeitos sobre a dispersão mostram que a falta de aquecimento aumenta a variabilidade dos preços, enquanto a melhoria na qualidade da localização e a construção em anos mais recentes tendem a reduzir essa dispersão. Isso indica que imóveis mais novos e mais bem localizados possuem preços mais padronizados no mercado, mas a variabilidade aumenta sutilmente para imóveis com maior área.
 
-```{r, fig.height=8, fig.width=8}
+```{r, fig.height=6, fig.width=6}
 #| echo: false
 #| message: false
 #| warning: false
 par(mfcol = c(4, 2), mar = c(4, 4, 2, 1), oma = c(0, 0, 3, 0))
 
 term.plot(fit_final, what = "mu", ask = FALSE, se = TRUE)
-mtext("Efeitos sobre a Média", side = 3, outer = TRUE, line = 1, adj = 0.25, cex = 1.2, font = 2)
+mtext("Efeitos Média", side = 3, outer = TRUE, line = 1, adj = 0.25, cex = 1.2, font = 2)
 
 term.plot(fit_final, what = "sigma", ask = FALSE, se = TRUE)
-mtext("Efeitos sobre a Dispersão", side = 3, outer = TRUE, line = 1, adj = 0.75, cex = 1.2, font = 2)
+mtext("Efeitos Dispersão", side = 3, outer = TRUE, line = 1, adj = 0.75, cex = 1.2, font = 2)
 
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 ```
@@ -194,7 +194,7 @@ par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 
 Na figura abaixo temos os resíduos após o ajuste da média. Podemos observar um leve formato de S no worm plot cruzando as bandas tracejadas de confiança nas pontas. Isso indica que, mesmo que a modelagem da média tenha capturado bem a estrutura geral, há um problema na curtose, isto é, a distribuição tem caudas levemente incompatíveis. Isso justifica a necessidade de modelar $\sigma$.
 
-```{r fig.height=4, fig.width=8}
+```{r fig.height=3, fig.width=5}
 #| echo: false
 #| message: false
 #| warning: false
@@ -226,10 +226,10 @@ mtext("Figura 2: Gráficos dos resíduos do modelo da média.", side = 4, line =
 Na Figura abaixo, temos um diagnóstico de resíduos do modelo final de variação. Novamente o worm plot apresenta um comportamento não usual, com os pontos em formato de U. Isso revela um problema de assimetria nos dados, que não é totalmente compatível com a Gama teórica. Uma distribuição ainda mais flexível poderia ter um ajuste melhor. 
 
 
-```{r fig.height=4, fig.width=8}
-#| echo: false
+```{r fig.height=3, fig.width=5}
 #| message: false
 #| warning: false
+#| include: false
 par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
 plot(resid(fit4.rent) ~ predict(fit4.rent), 
      xlab = "Valores Ajustados", 
@@ -250,7 +250,7 @@ qqnorm(resid(fit4.rent),
 qqline(resid((fit4.rent)), col="coral")
 wp(fit4.rent, col = "coral", pch=16, main="Wormplot")
 
-mtext("Figura 3: Gráficos dos resíduos do modelo da variância.", side = 4, line = -1, outer = TRUE, cex=0.8)
+mtext("Gráficos dos resíduos do modelo da variância.", side = 4, line = -1, outer = TRUE, cex=0.8)
 
 ```
 
@@ -262,10 +262,148 @@ São apresentadas 6 medidas realizadas em uma amostra de n = 56 peixes da espéc
 
 ## Análise descritiva 
 
+Abaixo temos os gráficos de dispersão das variáveis explicativas contra o peso Weight, que é a variável resposta que queremos modelar. O peso exibe uma relação não linear com as três variáveis de comprimento (Lenght1, Lenght2 e Lenght3). Além disso, podemos observar que para essas três variáveis temos curvas e dispersão extremamente similares, idicando uma possível multicolinearidade se as três forem adicionadas ao modelo. A tendência tem um formato parecido com um J, cada centímetro adicional no comprimento gera um impacto maior em peixes mais pesados do que em peixes mais leves. As variáveis de altura e largura também tem a dispersão similar, com correlação positiva com o peso. Há uma forte dispersão dos dados e comportamentos diferentes para diferentes faixas de valores. Por exemplo, observamos uma estagnação do peso em Widthpc após 18%, e entre 16% e 18% há um aumento de peso acelerado para o aumento de largura percentual. A altura Heightpc também demonstra uma estagnação do peso, mas nos valores iniciais até 16%, e partir daí cresce com uma aceleração que muda apos 28%. Essas variáveis apresentam comportamentos complexos não lineares. evidenciando a necessidade de algum modelo flexível para capturar esse padrões. Por fim, a densidade da variável resposta tem uma distribuição bimodal, que a rigor, aparenta ser a combinação de duas subpopulações dos peixe, podendo ser modelada por um modelo de mistura. No entanto, devido às alturas diferentes entre os picos, também podemos usar um modelo para distribuições assimétricas e positivas. 
+
+```{r}
+#| echo: false
+perch <- read.table("dados2/perch.txt", header=TRUE)
+#summary(perch)
+attach(perch)
+
+par(mfrow = c(2, 3), mar = c(4, 4, 2, 1))
+
+plot(density(Weight), main = "Densidade do Weight", col = "blue", lwd = 2, xlab = "Gramas")
+for(v in c("Length1", "Length2", "Length3", "Heightpc", "Widthpc")) {
+  plot(perch[[v]], Weight, 
+       xlab = v, ylab = "Weight", 
+       main = paste("Weight vs", v), 
+       pch = 20, col = "darkgray")
+  lines(lowess(perch[[v]], Weight), col = "red", lwd = 2)
+}
+par(mfrow = c(1, 1))
+
+```
+
 ## Modelo
 
+Para ajustar os dados, temos 4 modelos candidatos, todos da família Gama com $log(\sigma_i) = \gamma_0$, que resultaram nas seguintes estimativas. 
+
+* Modelo linear: $\log(\mu_i) = 1.3458 + 0.1099 Length2_i + 0.0409 Heightpc_i$
+
+* Modelo quadrático: $\log(\mu_i) = -0.9496 + 0.2749 Length2_i - 0.0028 Length2_i^2 + 0.0439 Heightpc_i$ 
+
+* Modelo com spline cúbico: $\log(\mu_i) = 1.1591 + s_{cs}(Length2_i) + 0.0449  Heightpc_i$
+
+* Modelo com P-spline: $\log(\mu_i) = 1.2325 + s_{pb}(Length2_i) + 0.0414  Heightpc_i$
+
+No modelo linear inicial, o algoritmo de seleção de variáveis manteve apenas Lenght2 e Heightpc no modelo da média, removendo medidas de comprimento e largura, provavelmente devido à multicolinearidade.Este modelo apresentou um AIC de 611.62. 
+
+Incluindo o termo quadrático em Lenght2, observamos uma melhora significtiva no ajuste, onde o AIC caiu para 534.57. Além disso o termo é evidentemente significativo com $p< 2 \cdot 10^{-16}$. Como vimos na análise descritiva, a relação entre o peso Weight e o comprimento Lenght2 não é linear, e a inclusão desse termo quadrático explica a relação das variáveis mais corretamente.
+
+Os modelos com splines se mostraram melhores que o modelo com termo quadrático. Mais especificamente, o modelo com spline cúbico apresentou um AIC de 524.01 e o modelo com p-splines 515.51, sendo o melhor dos 4 propostos. Os splines se adaptam localmente à curvatura dos dados, enquanto que o modelo quadrático força um formato de parábola, que pode gerar distorções nas caudas. 
+
+Dessa forma, diante dos resultados, escolhemos o modelo com P-splines pois este se ajusta melhor aos dados. 
 
 
+```{r}
+#| include: false
+# modelo inicial
+fit1.perch <- gamlss(Weight ~ ., data = perch, family = GA)
+fit2.perch <- stepGAIC(fit1.perch, direction = "both")
+summary(fit2.perch)
+
+# modelo termo quadratico
+fit3.perch <- gamlss(Weight ~ Length2 + I(Length2^2) + Heightpc, family = GA, data = perch)
+summary(fit3.perch)
+
+# modelo com spline cubico
+fit4.perch <- gamlss(Weight ~ cs(Length2) + Heightpc, family = GA, data = perch)
+summary(fit4.perch)
+
+#modelo com pspline
+fit5.perch <- gamlss(Weight ~ pb(Length2) + Heightpc, family = GA, data = perch)
+summary(fit5.perch)
 
 
+GAIC(fit2.perch, fit3.perch, fit4.perch, fit5.perch)
+```
+
+## Análise de resíduos
+
+Vamos apresentar a análise de resíduos para o modelo quadrático e o modelo selecionado, com P-splines.
+
+
+Abaixo temos o gráfico de resíduos do modelo gama com o termo quadrático em Lenght2. Embora o gráfico de resíduos quantílicos contra os valores ajustados mostre uma boa dispersão aleatória, o QQ-Plot tem um desvio acentuado nas caudas, a distribuição não aparenta acomodar muito bem as observações extremas. Além disso o worm plot tem um formato evidente de S, com alguns pontos encostando na banda de confiança e um deles para fora. Isso indica um problema com as caudas da distribuição, a curtose não é bem representada pela parábola. 
+
+```{r fig.height=3, fig.width=5}
+#| echo: false
+#| message: false
+#| warning: false
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(resid(fit3.perch) ~ predict(fit3.perch), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+plot(resid(fit3.perch) ~ c(1:nrow(perch)), 
+     xlab = "Índice", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+qqnorm(resid(fit3.perch), 
+     xlab = "Quantis teóricos", 
+     ylab = "Resíduos Quantílicos",
+     main="",
+     pch = 16, 
+     col = cores[1])
+qqline(resid((fit3.perch)), col="coral")
+wp(fit3.perch, col = "coral", pch=16, main="Wormplot")
+
+mtext("Gráficos dos resíduos do modelo com termo quadrático.", side = 4, line = -1, outer = TRUE, cex=0.8)
+
+```
+
+Analisando os resíduos do modelo vencedor, com P-splines, na figura abaixo podemos notar no QQ-Plot um leve desvio no extremo de valores positivos, mas é evidente que há uma melhora comparado com o do modelo quadrático. Além disso, há também uma melhora no worm plot, em que a linha de desvio esta substancialmente mais plana e próxima da linha central de referência, e todos os pontos encontram-se entre as bandas de confiança. A suavização penalizada do P-Spline capturou a verdadeira curvatura sem introduzir novas distorções. 
+
+O ajuste com P-Splines é evidentemente superior e corrige a falta de ajustes nas extremidades que o modelo quadrático não resolveu. 
+
+
+```{r fig.height=3, fig.width=5}
+#| echo: false
+#| message: false
+#| warning: false
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+plot(resid(fit5.perch) ~ predict(fit5.perch), 
+     xlab = "Valores Ajustados", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+plot(resid(fit5.perch) ~ c(1:nrow(perch)), 
+     xlab = "Índice", 
+     ylab = "Resíduos Quantílicos",
+     pch = 16, 
+     col = cores[1])
+qqnorm(resid(fit5.perch), 
+     xlab = "Quantis teóricos", 
+     ylab = "Resíduos Quantílicos",
+     main="",
+     pch = 16, 
+     col = cores[1])
+qqline(resid((fit5.perch)), col="coral")
+wp(fit5.perch, col = "coral", pch=16, main="Wormplot")
+
+mtext("Gráficos dos resíduos do modelo com P-splines.", side = 4, line = -1, outer = TRUE, cex=0.8)
+
+```
+
+Por fim, abaixo temos o gráfico de efeitos para o modelo com P-Splines. Trata-se da contribuição aditiva de cada variável do modelo, Lenght2 e Heightpc, na escala logaritmica do peso $log(\mu)$, controlando pelo efeito das demais. Para a variável Heightpc, temos um efeito linear e levemente positivo, os peixes proporcionalmente mais ailtos tendem a ser mais pesados de forma contínua e constante. Agora, para a variável Lenght2, observamos uma curva côncava pronunciada, revelando que o incremento no comprimento gera um forte aumento de peso, mas esse aumento desacelera levemente à medida que o peixe atinge tamanhos maiores. Este é um padrão complexo que foi capaz de ser capturado pela especificação do modelo de P-Splines. 
+
+```{r fig.height=3, fig.width=8}
+#| echo: false
+#| message: false
+#| warning: false
+par(mfrow = c(1, 2))
+term.plot(fit5.perch, what = "mu", ask = FALSE, se = TRUE)
+par(mfrow = c(1, 1))
+```
 
