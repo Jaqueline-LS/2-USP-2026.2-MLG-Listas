@@ -406,4 +406,10 @@ par(mfrow = c(1, 2))
 term.plot(fit5.perch, what = "mu", ask = FALSE, se = TRUE)
 par(mfrow = c(1, 1))
 ```
+# Declaração de contribuição
 
+Declaramos que ambas as participantes da dupla contribuíram para a conclusão deste trabalho. Os exercícios 1 e 2 foram redigidos pela Maia e revisados pela Jaqueline. Já os exercícios 3 e 4 foram desenvolvidos pela Jaqueline e revisados pela Maia. 
+
+# Códigos
+
+Os códigos estão disponíveis no repositório do github, no arquivo Lista2.qmd: \href{https://github.com/Jaqueline-LS/2-USP-2026.2-MLG-Listas}
