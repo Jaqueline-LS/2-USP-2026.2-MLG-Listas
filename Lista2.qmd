@@ -1,5 +1,5 @@
 ---
-title: "Lista 1 - Prática - MAE5763"
+title: "Lista 2 - Prática - MAE5763"
 author: "Jaqueline Lamas (17646475) \n Maia Ugarte (12558568)"
 format: 
     pdf:
