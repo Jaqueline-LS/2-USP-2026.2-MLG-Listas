@@ -42,6 +42,8 @@ suppressMessages(library(robustbase)) #boxplot robusto
 cores <- c("#1C3B6F", "coral","#8FA9CC","#F5B1A4")
 paleta <- c("#6f1926", "#de324c", "#f4895f", "#f8e16f", "#95cf92", "#369acc", "#9656a2", "#cbabd1")
 suppressMessages(library("dplyr"))
+source("heat_residuals.txt")
+
 
 ```
 
@@ -192,15 +194,14 @@ kable(tabela_sigma, caption = "Estimativas e razão de coeficientes de variaçã
 ```
 
 
-A análise dos efeitos parciais (Figura 2) revela como cada covariável influencia simultaneamente a média e a variabilidade do aluguel. Na média, a área útil tem um efeito linear positivo e contínuo, a ausência de aquecimento é um fator de forte desvalorização, e a qualidade da localização eleva o preço de forma progressiva ao passar da localização abaixo da média para acima da média. O ano de construção tem um comportamento não linear, mantendo-se estável para imóveis antigos, mas apresentando um forte crescimento para construções a partir da década de 1960. Em contrapartida, os efeitos sobre a dispersão mostram que a falta de aquecimento aumenta a variabilidade dos preços, enquanto a melhoria na qualidade da localização e a construção em anos mais recentes tendem a reduzir essa dispersão. Isso indica que imóveis mais novos e mais bem localizados possuem preços mais padronizados no mercado, mas a variabilidade aumenta sutilmente para imóveis com maior área.
+A análise dos efeitos parciais (Figura 2) revela como cada covariável influencia simultaneamente a média e a variabilidade do aluguel. Na média, a área útil tem um efeito linear positivo e contínuo, a ausência de aquecimento é um fator de forte desvalorização, e a qualidade da localização eleva o preço de forma progressiva ao passar da localização abaixo da média para acima da média. O ano de construção tem um comportamento não linear, mantendo-se estável para imóveis antigos, mas apresentando um forte crescimento para construções a partir da década de 1960. Em contrapartida, os efeitos sobre a dispersão mostram que a falta de aquecimento aumenta a variabilidade dos preços, enquanto a melhoria na qualidade da localização e a construção em anos mais recentes tendem a reduzir essa dispersão. Isso indica que imóveis mais novos e mais bem localizados possuem preços mais padronizados no mercado, mas a variabilidade aumenta sutilmente para imóveis com maior área útil.
 
 ```{r, fig.height=6, fig.width=6}
 #| echo: false
 #| message: false
 #| warning: false
 par(mfcol = c(4, 2), mar = c(4, 4, 2, 1), oma = c(0, 0, 3, 0))
-
-term.plot(fit_final, what = "mu", ask = FALSE, se = TRUE)
+term.plot(fit_final, what = "mu",ask = FALSE, se = TRUE)
 mtext("Efeitos Média", side = 3, outer = TRUE, line = 1, adj = 0.25, cex = 1.2, font = 2)
 
 term.plot(fit_final, what = "sigma", ask = FALSE, se = TRUE)
@@ -208,6 +209,7 @@ mtext("Efeitos Dispersão", side = 3, outer = TRUE, line = 1, adj = 0.75, cex = 
 
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
 mtext("Figura 2: Efeitos parciais.", side =1, line = -1, outer = TRUE, cex=0.8)
+
 ```
 ## Análise de resíduos
 
@@ -218,7 +220,7 @@ Na Figura 3 abaixo temos os resíduos após o ajuste da média. Podemos observar
 #| message: false
 #| warning: false
 
-par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.lab=0.7, cex.axis=0.5)
 plot(resid(fit2.rent) ~ predict(fit2.rent), 
      xlab = "Valores Ajustados", 
      ylab = "Resíduos Quantílicos",
@@ -236,10 +238,9 @@ qqnorm(resid(fit2.rent),
      pch = 16, 
      col = cores[1])
 qqline(resid((fit2.rent)), col="coral")
-wp(fit2.rent, col = "coral", pch=16, main="Wormplot")
-
-mtext("Figura 3: Gráficos dos resíduos do modelo da média.", side = 1, line = -1, outer = TRUE, cex=0.8)
-
+wp(fit2.rent, col = "coral", pch=16, main="Wormplot", cex.lab = 0.7)
+mtext("Figura 3: Gráficos dos resíduos do modelo da média.", side = 4, line = -1, outer = TRUE, cex=0.5)
+#heat_residuals(fit2.rent,file="resid1_media.pdf")
 ```
 
 Na Figura 4, temos um diagnóstico de resíduos do modelo final de variação. Novamente o worm plot apresenta um comportamento não usual, com os pontos em formato de U. Isso revela um problema de assimetria nos dados, que não é totalmente compatível com a Gama teórica. Uma distribuição ainda mais flexível poderia ter um ajuste melhor. 
@@ -248,8 +249,8 @@ Na Figura 4, temos um diagnóstico de resíduos do modelo final de variação. N
 ```{r fig.height=3, fig.width=5}
 #| message: false
 #| warning: false
-#| include: false
-par(mfrow=c(2,2), mar=c(5,4,1,2), cex.main=0.8)
+#| echo: false
+par(mfrow=c(2,2), mar=c(5,4,1,2), cex.lab=0.7, cex.axis=0.5)
 plot(resid(fit4.rent) ~ predict(fit4.rent), 
      xlab = "Valores Ajustados", 
      ylab = "Resíduos Quantílicos",
@@ -267,9 +268,9 @@ qqnorm(resid(fit4.rent),
      pch = 16, 
      col = cores[1])
 qqline(resid((fit4.rent)), col="coral")
-wp(fit4.rent, col = "coral", pch=16, main="Wormplot")
-
-mtext("Gráficos dos resíduos do modelo da variância.", side = 4, line = -1, outer = TRUE, cex=0.8)
+wp(fit4.rent, col = "coral", pch=16, main="Wormplot", cex.lab = 0.7)
+mtext("Figura4: Gráficos dos resíduos do modelo duplo.", side = 4, line = -1, outer = TRUE, cex=0.5)
+#heat_residuals(fit4.rent,file="calor/resid1_media_e_cv.pdf")
 
 ```
 
@@ -281,7 +282,7 @@ São apresentadas 6 medidas realizadas em uma amostra de n = 56 peixes da espéc
 
 ## Análise descritiva 
 
-Abaixo temos os gráficos de dispersão das variáveis explicativas contra o peso Weight, que é a variável resposta que queremos modelar. O peso exibe uma relação não linear com as três variáveis de comprimento (Lenght1, Lenght2 e Lenght3). Além disso, podemos observar que para essas três variáveis temos curvas e dispersão extremamente similares, idicando uma possível multicolinearidade se as três forem adicionadas ao modelo. A tendência tem um formato parecido com um J, cada centímetro adicional no comprimento gera um impacto maior em peixes mais pesados do que em peixes mais leves. As variáveis de altura e largura também tem a dispersão similar, com correlação positiva com o peso. Há uma forte dispersão dos dados e comportamentos diferentes para diferentes faixas de valores. Por exemplo, observamos uma estagnação do peso em Widthpc após 18%, e entre 16% e 18% há um aumento de peso acelerado para o aumento de largura percentual. A altura Heightpc também demonstra uma estagnação do peso, mas nos valores iniciais até 16%, e partir daí cresce com uma aceleração que muda apos 28%. Essas variáveis apresentam comportamentos complexos não lineares. evidenciando a necessidade de algum modelo flexível para capturar esse padrões. Por fim, a densidade da variável resposta tem uma distribuição bimodal, que a rigor, aparenta ser a combinação de duas subpopulações dos peixe, podendo ser modelada por um modelo de mistura. No entanto, devido às alturas diferentes entre os picos, também podemos usar um modelo para distribuições assimétricas e positivas. 
+Na Figura 5 temos os gráficos de dispersão das variáveis explicativas contra o peso Weight, que é a variável resposta que queremos modelar. O peso exibe uma relação não linear com as três variáveis de comprimento (Lenght1, Lenght2 e Lenght3). Além disso, podemos observar que para essas três variáveis temos curvas e dispersão extremamente similares, idicando uma possível multicolinearidade se as três forem adicionadas ao modelo. A tendência tem um formato parecido com um J, cada centímetro adicional no comprimento gera um impacto maior em peixes mais pesados do que em peixes mais leves. As variáveis de altura e largura também tem a dispersão similar, com correlação positiva com o peso. Há uma forte dispersão dos dados e comportamentos diferentes para diferentes faixas de valores. Por exemplo, observamos uma estagnação do peso em Widthpc após 18%, e entre 16% e 18% há um aumento de peso acelerado para o aumento de largura percentual. A altura Heightpc também demonstra uma estagnação do peso, mas nos valores iniciais até 16%, e partir daí cresce com uma aceleração que muda apos 28%. Essas variáveis apresentam comportamentos complexos não lineares, evidenciando a necessidade de algum modelo flexível para capturar esse padrões. Por fim, a densidade da variável resposta tem uma distribuição bimodal, que a rigor, aparenta ser a combinação de duas subpopulações dos peixe, podendo ser modelada por um modelo de mistura. No entanto, devido às alturas diferentes entre os picos, também podemos usar um modelo para distribuições assimétricas e positivas. 
 
 ```{r}
 #| echo: false
@@ -299,23 +300,24 @@ for(v in c("Length1", "Length2", "Length3", "Heightpc", "Widthpc")) {
        pch = 20, col = "darkgray")
   lines(lowess(perch[[v]], Weight), col = "red", lwd = 2)
 }
+mtext("Figura 5: Gráficos de dispersão das variáveis explicativas contra o peso Weight.", side = 4, line = -1, outer = TRUE, cex=0.5)
 par(mfrow = c(1, 1))
 
 ```
 
 ## Modelo
 
-Para ajustar os dados, temos 4 modelos candidatos, todos da família Gama com $log(\sigma_i) = \gamma_0$, que resultaram nas seguintes estimativas. 
+Para ajustar os dados, temos 4 modelos candidatos, todos $Peso_i\overset{ind}{\sim}Gama(\mu_i, \phi)$ com $\sigma_i = \frac{1}{\sqrt{\phi_i}}$ em que $log(\sigma_i) = \gamma_0$. Os ajustes resultaram nas seguintes estimativas. 
 
-* Modelo linear: $\log(\mu_i) = 1.3458 + 0.1099 Length2_i + 0.0409 Heightpc_i$
+* Modelo linear: $\log(\mu_i) = 1.3458 + 0.1099 Length2_i + 0.0409 Heightpc_i$ (Após a seleção via *StepGAIC* considerando como modelo inicial o modelo com todas as covariáveis de forma linear);
 
-* Modelo quadrático: $\log(\mu_i) = -0.9496 + 0.2749 Length2_i - 0.0028 Length2_i^2 + 0.0439 Heightpc_i$ 
+* Modelo quadrático: $\log(\mu_i) = -0.9496 + 0.2749 Length2_i - 0.0028 Length2_i^2 + 0.0439 Heightpc_i$ (Inclusão de termos quadráticos para as covariáveis selecionadas);
 
-* Modelo com spline cúbico: $\log(\mu_i) = 1.1591 + s_{cs}(Length2_i) + 0.0449  Heightpc_i$
+* Modelo com spline cúbico: $\log(\mu_i) = 1.1591 + s_{cs}(Length2_i) + 0.0449  Heightpc_i$;
 
-* Modelo com P-spline: $\log(\mu_i) = 1.2325 + s_{pb}(Length2_i) + 0.0414  Heightpc_i$
+* Modelo com P-spline: $\log(\mu_i) = 1.2325 + s_{pb}(Length2_i) + 0.0414  Heightpc_i$.
 
-No modelo linear inicial, o algoritmo de seleção de variáveis manteve apenas Lenght2 e Heightpc no modelo da média, removendo medidas de comprimento e largura, provavelmente devido à multicolinearidade.Este modelo apresentou um AIC de 611.62. 
+No modelo linear inicial, o algoritmo de seleção de variáveis manteve apenas Lenght2 e Heightpc no modelo da média, removendo medidas de comprimento e largura, provavelmente devido à multicolinearidade. Este modelo apresentou um AIC de 611.62. 
 
 Incluindo o termo quadrático em Lenght2, observamos uma melhora significtiva no ajuste, onde o AIC caiu para 534.57. Além disso o termo é evidentemente significativo com $p< 2 \cdot 10^{-16}$. Como vimos na análise descritiva, a relação entre o peso Weight e o comprimento Lenght2 não é linear, e a inclusão desse termo quadrático explica a relação das variáveis mais corretamente.
 

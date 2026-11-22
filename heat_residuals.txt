@@ -1,0 +1,239 @@
+################################################################################
+## heat_residuals.txt
+##
+## Heat plots of quantile residuals for GLMs and GEE models.
+##
+## The user only supplies a fitted model:
+##   - GEE:          glmtoolbox::glmgee(...)  (any working correlation, including
+##                   "Independence")
+##   - independent:  stats::glm(...)  or  MASS::glm.nb(...)
+##   - GAMLSS:       gamlss::gamlss(...)  (any family of gamlss.dist, e.g. NO, BI,
+##                   PO, NBI, DPO, GA; additive terms such as pb() are allowed)
+##
+## Supported response distributions (family of the model):
+##   gaussian                      -> normal
+##   binomial                      -> Bernoulli (0/1) or binomial (proportions
+##                                    with prior weights = number of trials)
+##   poisson                       -> Poisson
+##   negative binomial             -> MASS::glm.nb, or the families
+##                                    MASS::negative.binomial(theta) / MASS::neg.bin(theta)
+##   Gamma                         -> gamma
+##
+## Panels (heat plots = smoothed densities of the residuals of R randomizations):
+##   "fitted": quantile residual against the fitted value
+##   "index" : quantile residual against the observation index (data order of
+##             the model; for GEE, observations of the same cluster are adjacent)
+##   "worm"  : worm plot (deviation between empirical and theoretical quantiles)
+## Smooth trend curves (penalized regression splines, mgcv) are drawn on every
+## panel: under the model they should be close to zero.
+##
+## Discrete responses (Bernoulli, binomial, Poisson, negative binomial) use
+## randomized quantile residuals (Dunn and Smyth, 1996), by default R = 50
+## randomizations; continuous responses (normal, gamma) use R = 1.
+##
+## Notes:
+##   * The worm plot bands assume independent residuals and known parameters;
+##     for GEE (correlated residuals) they are too narrow and serve only as a
+##     reference.
+##   * For a Poisson GEE, glmgee estimates a dispersion parameter phi, but the
+##     quantile residuals use the Poisson distribution itself; residuals that are
+##     more spread out than N(0, 1) therefore indicate overdispersion.
+##
+## Packages: glmtoolbox (GEE models), MASS (negative binomial), gamlss (GAMLSS models), mgcv, viridisLite
+## (both usually installed with R), KernSmooth (used by smoothScatter).
+##
+## Usage:
+##   source("heat_residuals.txt")
+##   heat_residuals(model)                                  # draw on screen
+##   heat_residuals(model, file = "heat.pdf")               # save to a file
+##   heat_residuals(model, panels = c("fitted", "worm"))    # choose the panels
+## Developed by Danilo Silva, Luis Henrique Toledo and Gilberto Paula of IME-USP
+################################################################################
+
+## ---------------------------------------------------------------------------
+## Response, fitted values and distribution of a fitted model
+residual_info <- function(model) {
+  if (inherits(model, "gamlss")) return(residual_info_gamlss(model))
+  if (inherits(model, "glmgee")) {
+    type <- "GEE"
+    y <- as.numeric(model$y)
+    mu <- as.numeric(model$fitted.values)
+    w <- as.numeric(model$prior.weights)
+    phi <- as.numeric(model$phi)
+    fam <- model$family
+    corstr <- model$corstr
+  } else if (inherits(model, "glm")) {
+    type <- "independent"
+    y <- as.numeric(model$y)
+    mu <- as.numeric(fitted(model))
+    w <- as.numeric(model$prior.weights)
+    fam <- model$family
+    phi <- if (fam$family %in% c("binomial", "poisson") || inherits(model, "negbin")) 1
+           else summary(model)$dispersion
+    corstr <- NA
+  } else stop("model must be a glmtoolbox::glmgee, stats::glm, MASS::glm.nb or gamlss::gamlss fit")
+  if (is.null(w) || length(w) == 0) w <- rep(1, length(y))
+
+  family <- fam$family
+  theta <- NA
+  if (grepl("^Negative Binomial", family)) {
+    dist <- "negbin"
+    theta <- if (!is.null(model$theta)) model$theta
+             else get(".Theta", envir = environment(fam$variance))
+  } else if (family == "gaussian") dist <- "normal"
+  else if (family == "binomial") dist <- "binomial"
+  else if (family %in% c("poisson", "quasipoisson")) dist <- "poisson"
+  else if (family == "Gamma") dist <- "gamma"
+  else stop("family '", family, "' is not supported")
+
+  trials <- if (dist == "binomial") w else NULL
+  if (dist == "binomial") y <- round(y * trials)   # number of successes
+  label <- switch(dist, normal = "normal", binomial = if (all(trials == 1)) "Bernoulli" else "binomial",
+                  poisson = "Poisson", negbin = sprintf("negative binomial (theta = %.3g)", theta),
+                  gamma = "gamma")
+  list(y = y, mu = mu, trials = trials, phi = phi, theta = theta, dist = dist,
+       discrete = dist %in% c("binomial", "poisson", "negbin"),
+       type = type, corstr = corstr, label = label)
+}
+
+## GAMLSS models: the distribution function of the family (gamlss.dist) evaluated
+## at the fitted distribution parameters (mu, sigma, nu, tau)
+residual_info_gamlss <- function(model) {
+  fam <- model$family[1]
+  fobj <- gamlss.dist::as.gamlss.family(fam)
+  pfun <- get(paste0("p", fam), envir = asNamespace("gamlss.dist"))
+  par_vals <- lapply(setNames(model$parameters, model$parameters), function(p) fitted(model, p))
+  extra <- if ("bd" %in% names(formals(pfun))) list(bd = model$bd) else list()
+  cdf <- function(q, idx = seq_along(q))
+    do.call(pfun, c(list(q = q), lapply(par_vals, `[`, idx), lapply(extra, `[`, idx)))
+  par_txt <- paste(sprintf("%s = %.3g", names(par_vals)[-1],
+                           sapply(par_vals[-1], function(v) if (length(unique(round(v, 8))) == 1) v[1] else NA)),
+                   collapse = ", ")
+  list(y = as.numeric(model$y), mu = as.numeric(par_vals$mu), cdf = cdf,
+       discrete = fobj$type == "Discrete", dist = fam, type = "GAMLSS", corstr = NA,
+       label = paste0(model$family[2], " (", fam, if (nzchar(par_txt)) paste0("; ", par_txt), ")"))
+}
+
+## ---------------------------------------------------------------------------
+## Quantile residuals: N x R matrix (R randomizations for discrete responses)
+quantile_residuals <- function(info, R = 1) {
+  y <- info$y; mu <- info$mu; n <- length(y)
+  if (!is.null(info$cdf)) {                     # GAMLSS families
+    clamp <- function(u) qnorm(pmin(pmax(u, 1e-12), 1 - 1e-12))
+    b <- info$cdf(y)
+    if (!info$discrete) return(matrix(clamp(b), n, R))
+    a <- numeric(n); pos <- which(y > 0)       # P(Y <= y - 1); zero below the support
+    if (length(pos)) a[pos] <- info$cdf(y[pos] - 1, pos)
+    return(sapply(seq_len(R), function(j) clamp(runif(n, a, b))))
+  }
+  if (!info$discrete) {
+    u <- switch(info$dist,
+                normal = pnorm(y, mu, sqrt(info$phi)),
+                gamma  = pgamma(y, shape = 1 / info$phi, scale = mu * info$phi))
+    r <- qnorm(pmin(pmax(u, 1e-12), 1 - 1e-12))
+    return(matrix(r, n, R))
+  }
+  cdf <- switch(info$dist,
+                binomial = function(q) pbinom(q, info$trials, mu),
+                poisson  = function(q) ppois(q, mu),
+                negbin   = function(q) pnbinom(q, size = info$theta, mu = mu))
+  a <- cdf(y - 1); b <- cdf(y)
+  sapply(seq_len(R), function(j) qnorm(pmin(pmax(runif(n, a, b), 1e-12), 1 - 1e-12)))
+}
+
+## ---------------------------------------------------------------------------
+## Main function
+## model   : fitted glmgee, glm, glm.nb or gamlss object
+## R       : number of randomizations (default: 50 for discrete responses, 1 otherwise)
+## panels  : any of "fitted", "index", "worm"
+## trend   : draw smooth trend curves
+## palette : "inferno" (colour-blind friendly) or "turbo" (original colours)
+## file    : NULL (screen) or a file name ending in .pdf or .png
+## seed    : seed for the randomizations (the random number state is restored)
+heat_residuals <- function(model, R = NULL, panels = c("fitted", "index", "worm"),
+                           trend = TRUE, palette = c("inferno", "turbo"), file = NULL,
+                           width = 3.6 * length(panels), height = 3.6, seed = 2026,
+                           xlab_fitted = "Fitted value", main = NULL) {
+  panels <- match.arg(panels, c("fitted", "index", "worm"), several.ok = TRUE)
+  palette <- match.arg(palette)
+  info <- residual_info(model)
+  if (is.null(R)) R <- if (info$discrete) 50 else 1
+
+  if (!is.null(seed)) {
+    old <- if (exists(".Random.seed", envir = globalenv())) get(".Random.seed", envir = globalenv())
+    on.exit(if (is.null(old)) rm(".Random.seed", envir = globalenv())
+            else assign(".Random.seed", old, envir = globalenv()), add = TRUE)
+    set.seed(seed)
+  }
+  rq <- quantile_residuals(info, R)
+  n <- nrow(rq)
+
+  ## worm plot quantities
+  th <- qnorm(ppoints(n))
+  cen <- apply(rq, 2, sort) - th
+  se <- sqrt(ppoints(n) * (1 - ppoints(n)) / n) / dnorm(th)
+  upp <- qnorm(0.975) * se; low <- -upp
+  pct_out <- mean(cen > upp | cen < low)
+
+  if (!is.null(file)) {
+    if (grepl("\\.png$", file, ignore.case = TRUE))
+      png(file, width = width, height = height, units = "in", res = 300)
+    else grDevices::cairo_pdf(file, width = width, height = height)
+    on.exit(dev.off(), add = TRUE)
+  }
+  op <- par(mfrow = c(1, length(panels)), mar = c(3.9, 4.0, 1.6, 0.6),
+            oma = c(0, 0, if (is.null(main)) 0 else 1.6, 0),
+            mgp = c(2.6, 0.6, 0), las = 1, cex.lab = 1, cex.axis = 0.85, tcl = -0.3)
+  on.exit(par(op), add = TRUE, after = FALSE)
+
+  cols <- if (palette == "turbo") viridisLite::turbo(11)
+          else viridisLite::viridis(11, option = "inferno", direction = -1)
+  ramp <- colorRampPalette(c("white", cols))
+  line <- function(x, y) { lines(x, y, col = "white", lwd = 4); lines(x, y, col = "black", lwd = 1.8) }
+  smooth <- function(x, y, grid) {
+    k <- max(3, min(10, length(unique(x)) - 1))
+    fit <- mgcv::gam(y ~ s(x, k = k))
+    predict(fit, data.frame(x = grid))
+  }
+  ylim_r <- c(-1, 1) * max(3.5, ceiling(max(abs(rq))))
+  letters_used <- 0
+  tag <- function() { letters_used <<- letters_used + 1
+    mtext(sprintf("(%s)", letters[letters_used]), side = 3, adj = 0, line = 0.3, font = 2) }
+
+  for (p in panels) {
+    if (p == "fitted") {
+      x <- rep(info$mu, R)
+      smoothScatter(x, c(rq), colramp = ramp, nbin = 200, nrpoints = 50, col = "grey30",
+                    pch = 19, cex = 0.3, xlab = xlab_fitted, ylab = "Quantile residual",
+                    ylim = ylim_r, useRaster = TRUE)
+      abline(h = 0, lty = 2, lwd = 1.4); abline(h = c(-2, 2), lty = 3, col = "grey40")
+      if (trend) { g <- seq(min(info$mu), max(info$mu), length.out = 200); line(g, smooth(x, c(rq), g)) }
+    }
+    if (p == "index") {
+      x <- rep(seq_len(n), R)
+      smoothScatter(x, c(rq), colramp = ramp, nbin = 200, nrpoints = 50, col = "grey30",
+                    pch = 19, cex = 0.3, xlab = "Index", ylab = "Quantile residual",
+                    ylim = ylim_r, useRaster = TRUE)
+      abline(h = 0, lty = 2, lwd = 1.4); abline(h = c(-2, 2), lty = 3, col = "grey40")
+      if (trend) { g <- seq(1, n, length.out = 200); line(g, smooth(x, c(rq), g)) }
+    }
+    if (p == "worm") {
+      m <- max(abs(range(cen[6:(n - 5), ])), upp[max(1, round(0.01 * n))])
+      ylim_w <- c(-1, 1) * ceiling(10 * 1.15 * m) / 10
+      smoothScatter(rep(th, R), c(cen), colramp = ramp, nbin = 200, nrpoints = 0,
+                    xlab = "Theoretical quantile", ylab = "Centered quantile residual",
+                    ylim = ylim_w, useRaster = TRUE)
+      abline(h = 0, lty = 2, lwd = 1.4)
+      lines(th, upp, lty = 2, lwd = 1.4); lines(th, low, lty = 2, lwd = 1.4)
+      if (trend) {
+        worm <- if (R > 1) apply(cen, 1, median) else cen[, 1]
+        line(th, smooth(th, worm, th))
+      }
+    }
+    tag()
+  }
+  if (!is.null(main)) mtext(main, side = 3, outer = TRUE, line = 0.2, font = 2)
+
+  invisible(list(residuals = rq, R = R, distribution = info$label, model_type = info$type,
+                 working_correlation = info$corstr, pct_outside_worm = pct_out))
+}
