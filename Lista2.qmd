@@ -49,7 +49,7 @@ suppressMessages(library("dplyr"))
 
 # Exercício 1
 
-São descritas 9 variáveis observadas numa amostra aleatória de 1967 unidades habitacionais da cidade de Munich em 1993. (i) R (valor mensal líquido do aluguel em DM), (ii) Fl (área útil em $m^2$), (iii) A (ano da construção), (iv) H (variável binária referente à existência de aquecimento central, 0: sim, 1: não) e (v) loc (qualidade da localização do imóvel, 1: abaixo da média, 2: na média e 3: acima da média. Neste estudo, queremos explicar o valor do aluguel por meio das demais variáveis.
+São descritas 9 variáveis observadas em uma amostra aleatória de 1967 unidades habitacionais da cidade de Munich em 1993. (i) R (valor mensal líquido do aluguel em DM), (ii) Fl (área útil em $m^2$), (iii) A (ano da construção), (iv) H (variável binária referente à existência de aquecimento central, 0: sim, 1: não) e (v) loc (qualidade da localização do imóvel, 1: abaixo da média, 2: na média e 3: acima da média. Neste estudo, queremos explicar o valor do aluguel por meio das demais variáveis.
 
 ```{r, echo=FALSE, warning=FALSE}
 suppressMessages(attach(rent))
@@ -60,7 +60,7 @@ library(knitr)
 
 ## Análise Descritiva
 
-A Figura 1 apresenta o comportamento da variável resposta e sua relação com as covariáveis do estudo. O gráfico de densidade mostra que a distribuição do valor mensal do aluguel apresenta assimetria à direita, indicando que a suposição de normalidade talvez não seja adequada, podendo ser usada uma gama. Em relação às covariáveis contínuas, o diagrama de dispersão entre aluguel e área útil mostra uma relação positiva aparentemente linear, além de um efeito de funil com maior dispersão para imóveis maiores. A relação com o ano de construção mostra um comportamento não linear, com estabilidade em imóveis antigos até 1960 e um forte crescimento a partir desta data. Por fim, a análise das variáveis categóricas evidencia que imóveis com aquecimento central possuem uma mediana de aluguel maior e concentram valores mais altos. E, por fim, a qualidade da localização tem um efeito positivo e progressivo sobre o valor do imóvel, as melhores localizações apresentam medianas mais elevadas, maior amplitude e mais outliers de aluguéis elevados.
+A Figura 1 apresenta o comportamento da variável resposta e sua relação com as covariáveis do estudo. O gráfico de densidade mostra que a distribuição do valor mensal do aluguel apresenta assimetria à direita, indicando que a suposição de normalidade talvez não seja adequada. Como o valor do aluguel é sempre positivo uma distribuição gama pode se ajustar melhor aos dados. Em relação às covariáveis contínuas, o diagrama de dispersão entre aluguel e área útil mostra uma relação positiva aparentemente linear, além de um efeito de funil com maior dispersão para imóveis maiores. A relação com o ano de construção mostra um comportamento não linear, com estabilidade em imóveis antigos até 1960 e um forte crescimento a partir desta data. Por fim, a análise das variáveis categóricas evidencia que imóveis com aquecimento central possuem uma mediana de aluguel maior e concentram valores mais altos. E, por fim, a qualidade da localização tem um efeito positivo e progressivo sobre o valor do imóvel, as melhores localizações apresentam medianas mais elevadas, maior amplitude e mais outliers de aluguéis elevados.
 
 ```{r echo=FALSE, fig.align='center', fig.height=4, fig.width=7}
 #| message: false
@@ -87,47 +87,65 @@ boxplot(R ~ H, main="Aluguel vs Aquecimento", xlab="Aquecimento", ylab="Aluguel 
 
 boxplot(R ~ loc, main="Aluguel vs Localização", xlab="Localização", ylab="Aluguel (DM)", col=c("lightblue", "lightyellow", "lightcoral"))
 
-mtext("Densidade da variável resposta e gráficos de dispersão da variável resposta pelas explicativas.", side = 3, line = -1, outer = TRUE, cex=0.5)
+mtext("Figura 1: Densidade da variável resposta e gráficos de dispersão da variável resposta pelas explicativas.", side = 3, line = -1, outer = TRUE, cex=0.5)
 ```
 
 ## Modelo
 
-Vamos ajustar um modelo gama duplo, assumindo $Y_i \sim G(\mu_i, \phi_i)$, com coeficiente de variação $\sigma_i = \frac{1}{\sqrt{\phi_i}}$.
+Vamos ajustar um modelo gama duplo, assumindo $Y_i \overset{ind}\sim G(\mu_i, \phi_i)$, com coeficiente de variação $\sigma_i = \frac{1}{\sqrt{\phi_i}}$.
 
 * Ajuste inicial  
 
+Consideramos todas covariáveis disponíveis para modelar tanto $\mu$ quanto $\sigma$. As variáveis *F1*, *H* e *loc* foram incluídas de forma linear, já a covariável *A* foi considerada de forma não linear por meio de p-splines com 20 nós internos.
+
 \begin{center}
 
-$log(\mu_i) = \beta_0 + \beta_1 F1_i + \beta_2 H_i + \beta_3 loc_{2i} + \beta_4 loc_{3i} + s_{\mu}(A_i)$
+$log(\mu_i) = \beta_0 + \beta_1 F1_i + \beta_2 H_i + \beta_3 loc_{2i} + \beta_4 loc_{3i} + pb_{\mu}(A_i)$
 
-$log(\sigma_i) = \gamma_0 + \gamma_1 F1_i + \gamma_2 H_i + \gamma_3 loc_{2i} + \gamma_4 loc_{3i} + s_{\sigma}(A_i)$
+$log(\sigma_i) = \gamma_0 + \gamma_1 F1_i + \gamma_2 H_i + \gamma_3 loc_{2i} + \gamma_4 loc_{3i} + pb_{\sigma}(A_i)$
 
 \end{center}
 
-Todas as variáveis são significativas no modelo da média e da dispersão. Os efeitos não lineares aditivos para o ano de construção, p-splines, são $s_{\mu}$ e $s_{\sigma}$ 
+**Não entendi esse comentário**
+
+Todas as variáveis são significativas no modelo da média e da dispersão. Os efeitos não lineares aditivos para o ano de construção, p-splines, são $pb_{\mu}$ e $pb_{\sigma}$ 
+
+!!!!!!
+
+Fizemos uma seleção de variáveis por meio do *StepGAIC* para $\mu$ sem modelar $\sigma$.
+Com base nas covariáveis selecionadas para $\mu$, ajustou-se um modelo duplo, para o qual selecionamos via *StepGAIC* as covariáveis para modelar $\sigma$. O critério de seleção manteve todas covariáveis tanto para $\mu$ quanto para $\sigma$.
 
 * Ajuste final
 
 \begin{center}
 
-$\log(\hat{\mu}_i) = 2.893 + 0.0105 F1_i - 0.2867 H_i + 0.2050 loc2_iloc_{2i} + 0.2845 loc_{3i} + s_{\mu}(A_i)$
+$\log(\hat{\mu}_i) = 2.893 + 0.0105 F1_i - 0.2867 H_i + 0.2050 loc_{2i} + 0.2845 loc_{3i} + pb_{\mu}(A_i)$
 
-$\log(\hat{\sigma}_i) = 5.946 + 0.0017 F1_i + 0.0766 H_i - 0.1122 loc_{2i} - 0.1694 loc_{3i} + s_{\sigma}(A_i)$
+$\log(\hat{\sigma}_i) = 5.946 + 0.0017 F1_i + 0.0766 H_i - 0.1122 loc_{2i} - 0.1694 loc_{3i} + pb_{\sigma}(A_i)$
 
 \end{center}
 
 
-Interpretando os efeitos estimados sobre a média, temos que a cada $1m^2$ adicional de área, o aluguel médio aumenta em 1.05%, com um IC de 95% de $[1.0098, 1.0113]$. Os imóveis sem aquecimento central tem um aluguel médio 24.9% menor que os imóveis com aquecimento, com IC $[0.7155, 0.7877]$. O aluguel médio aumenta 22.7% de uma localização na média em relação à localização abaixo da média, com IC $[0.7155, 0.7877]$ e há um aumento de 32.9% de uma localização acima da média em relação à localização abaixo da média, com Ic de $[1.2427, 1.4216]$.
+Interpretando os efeitos estimados sobre a média, temos que a cada $1m^2$ adicional de área, o aluguel médio aumenta em 1.05%, com um IC de 95% de $[1.0098, 1.0113]$. Os imóveis sem aquecimento central tem um aluguel médio 24.9% menor que os imóveis com aquecimento, com IC $[0.7155, 0.7877]$. O aluguel médio aumenta 22.7% de uma localização na média em relação à localização abaixo da média, com IC $[1.1513, 1.3087]$ e há um aumento de 32.9% de uma localização acima da média em relação à localização abaixo da média, com IC de $[1.2427, 1.4216]$. Para a variável *A* temos a tendência linear do polinômio pb(A).
+
+
+**Aqui deixa o pb(A) na tabela mas nao interpreta?**
 
 
 ```{r}
 #| include: false
+
+# Ajuste inicial modelando a média
 fit1.rent <- gamlss(R ~ Fl + H + loc + pb(A, inter=20), family=GA, data=rent)
 fit2.rent <- stepGAIC(fit1.rent, direction="both")
 #summary(fit2.rent)
+# Selecionou para mu
 
+# Ajusta de novo com as cov. selecionadas para mu e modela o sigma tmb
 fit3.rent <- gamlss(formula(fit2.rent), sigma.fo = ~ Fl + H + loc + pb(A, inter=20), family=GA, data=rent)
-fit4.rent <- stepGAIC(fit3.rent, direction="both")
+
+# Seleciona as covariáveis para phi
+fit4.rent <- stepGAIC(fit3.rent, direction="both", what = "sigma")
 #summary(fit4.rent)
 
 fit_final <- fit4.rent
@@ -150,10 +168,10 @@ tabela_razao_medias <- data.frame(
   IC_95_Sup = exp(ic_mu[,2])
 )
 
-kable(tabela_razao_medias, caption = "Estimativas e razão de médias para a média")
+kable(tabela_razao_medias, caption = "Estimativas e razão de médias")
 
 ```
-Agora, os efeitos sobre o coeficiente de variação indicam que a variabilidade relatica do preço aumenta marginalmente à medida que a área cresce, com um Ic de 95% de $[1.0001; 1.0033]$. Um imóvel sem aquecimento aumenta essa variabilidade em 7.9%, com IC que cruza o 1 de  $[0.9954, 1.1710]$, sendo significativo a 10% mas não 5%. Uma localização média reduz a variabilidade do aluguel em 10.6% em comparação à abaixo da média, com IC $[0.7494, 0.9508]$, e a localização acima da média reduz em 15.6% em relação à mesma, com um Ic de $[0.7494, 0.9508]$.
+Agora, os efeitos sobre o coeficiente de variação indicam que a variabilidade relativa do preço aumenta marginalmente à medida que a área cresce, com um IC de 95% de $[1.0001; 1.0033]$. Um imóvel sem aquecimento aumenta essa variabilidade em 7.9%, com IC que cruza o 1 de  $[0.9954, 1.1710]$, sendo significativo a 10% mas não 5%. Uma localização média reduz a variabilidade do aluguel em 10.6% em comparação à abaixo da média, com IC $[0.7494, 0.9508]$, e a localização acima da média reduz em 15.6% em relação à mesma, com um IC de $[0.7494, 0.9508]$. 
 
 ```{r}
 #| echo: false
@@ -164,17 +182,17 @@ ic_sigma <- confint(fit4.rent, what = "sigma")
 
 tabela_sigma <- data.frame(
   Estimativa_Log = coef_sigma,
-  Razao_Medias = exp(coef_sigma),
+  Razao_CVs = exp(coef_sigma),
   IC_95_Inf = exp(ic_sigma[, 1]),
   IC_95_Sup = exp(ic_sigma[, 2])
 )
 
-kable(tabela_sigma, caption = "Estimativas e razão de médias para a dispersão")
+kable(tabela_sigma, caption = "Estimativas e razão de coeficientes de variação")
 
 ```
 
 
-A análise dos efeitos parciais revela como cada covariável influencia simultaneamente a média e a variabilidade do aluguel. Na média, a área útil tem um efeito linear positivo e contínuo, a ausência de aquecimento é um fator de forte desvalorização, e a qualidade da localização eleva o preço de forma progressiva ao passar da localização abaixo da média para acima da média. O ano de construção tem um comportamento não linear, mantendo-se estável para imóveis antigos, mas apresentando um forte crescimento para construções a partir da década de 1960. Em contrapartida, os efeitos sobre a dispersão mostram que a falta de aquecimento aumenta a variabilidade dos preços, enquanto a melhoria na qualidade da localização e a construção em anos mais recentes tendem a reduzir essa dispersão. Isso indica que imóveis mais novos e mais bem localizados possuem preços mais padronizados no mercado, mas a variabilidade aumenta sutilmente para imóveis com maior área.
+A análise dos efeitos parciais (Figura 2) revela como cada covariável influencia simultaneamente a média e a variabilidade do aluguel. Na média, a área útil tem um efeito linear positivo e contínuo, a ausência de aquecimento é um fator de forte desvalorização, e a qualidade da localização eleva o preço de forma progressiva ao passar da localização abaixo da média para acima da média. O ano de construção tem um comportamento não linear, mantendo-se estável para imóveis antigos, mas apresentando um forte crescimento para construções a partir da década de 1960. Em contrapartida, os efeitos sobre a dispersão mostram que a falta de aquecimento aumenta a variabilidade dos preços, enquanto a melhoria na qualidade da localização e a construção em anos mais recentes tendem a reduzir essa dispersão. Isso indica que imóveis mais novos e mais bem localizados possuem preços mais padronizados no mercado, mas a variabilidade aumenta sutilmente para imóveis com maior área.
 
 ```{r, fig.height=6, fig.width=6}
 #| echo: false
@@ -189,10 +207,11 @@ term.plot(fit_final, what = "sigma", ask = FALSE, se = TRUE)
 mtext("Efeitos Dispersão", side = 3, outer = TRUE, line = 1, adj = 0.75, cex = 1.2, font = 2)
 
 par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
+mtext("Figura 2: Efeitos parciais.", side =1, line = -1, outer = TRUE, cex=0.8)
 ```
 ## Análise de resíduos
 
-Na figura abaixo temos os resíduos após o ajuste da média. Podemos observar um leve formato de S no worm plot cruzando as bandas tracejadas de confiança nas pontas. Isso indica que, mesmo que a modelagem da média tenha capturado bem a estrutura geral, há um problema na curtose, isto é, a distribuição tem caudas levemente incompatíveis. Isso justifica a necessidade de modelar $\sigma$.
+Na Figura 3 abaixo temos os resíduos após o ajuste da média. Podemos observar um leve formato de S no worm plot cruzando as bandas tracejadas de confiança nas pontas. Isso indica que, mesmo que a modelagem da média tenha capturado bem a estrutura geral, há um problema na curtose, isto é, a distribuição tem caudas levemente incompatíveis. Isso justifica a necessidade de modelar $\sigma$.
 
 ```{r fig.height=3, fig.width=5}
 #| echo: false
@@ -219,11 +238,11 @@ qqnorm(resid(fit2.rent),
 qqline(resid((fit2.rent)), col="coral")
 wp(fit2.rent, col = "coral", pch=16, main="Wormplot")
 
-mtext("Figura 2: Gráficos dos resíduos do modelo da média.", side = 4, line = -1, outer = TRUE, cex=0.8)
+mtext("Figura 3: Gráficos dos resíduos do modelo da média.", side = 1, line = -1, outer = TRUE, cex=0.8)
 
 ```
 
-Na Figura abaixo, temos um diagnóstico de resíduos do modelo final de variação. Novamente o worm plot apresenta um comportamento não usual, com os pontos em formato de U. Isso revela um problema de assimetria nos dados, que não é totalmente compatível com a Gama teórica. Uma distribuição ainda mais flexível poderia ter um ajuste melhor. 
+Na Figura 4, temos um diagnóstico de resíduos do modelo final de variação. Novamente o worm plot apresenta um comportamento não usual, com os pontos em formato de U. Isso revela um problema de assimetria nos dados, que não é totalmente compatível com a Gama teórica. Uma distribuição ainda mais flexível poderia ter um ajuste melhor. 
 
 
 ```{r fig.height=3, fig.width=5}
