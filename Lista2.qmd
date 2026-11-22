@@ -380,7 +380,7 @@ qqnorm(resid(fit3.perch),
 qqline(resid((fit3.perch)), col="coral")
 wp(fit3.perch, col = "coral", pch=16, main="Wormplot")
 
-mtext("Gráficos dos resíduos do modelo com termo quadrático.", side = 4, line = -1, outer = TRUE, cex=0.8)
+mtext("Figura 6: Gráficos dos resíduos do modelo com termo quadrático.", side = 4, line = -1, outer = TRUE, cex=0.8)
 
 ```
 
@@ -413,11 +413,11 @@ qqnorm(resid(fit5.perch),
 qqline(resid((fit5.perch)), col="coral")
 wp(fit5.perch, col = "coral", pch=16, main="Wormplot")
 
-mtext("Gráficos dos resíduos do modelo com P-splines.", side = 4, line = -1, outer = TRUE, cex=0.8)
+mtext("Figura 7: Gráficos dos resíduos do modelo com P-splines.", side = 4, line = -1, outer = TRUE, cex=0.8)
 
 ```
 
-Por fim, abaixo temos o gráfico de efeitos para o modelo com P-Splines. Trata-se da contribuição aditiva de cada variável do modelo, Lenght2 e Heightpc, na escala logaritmica do peso $log(\mu)$, controlando pelo efeito das demais. Para a variável Heightpc, temos um efeito linear e levemente positivo, os peixes proporcionalmente mais ailtos tendem a ser mais pesados de forma contínua e constante. Agora, para a variável Lenght2, observamos uma curva côncava pronunciada, revelando que o incremento no comprimento gera um forte aumento de peso, mas esse aumento desacelera levemente à medida que o peixe atinge tamanhos maiores. Este é um padrão complexo que foi capaz de ser capturado pela especificação do modelo de P-Splines. 
+Por fim, abaixo temos o gráfico de efeitos para o modelo com P-Splines. Trata-se da contribuição aditiva de cada variável do modelo, Lenght2 e Heightpc, na escala logaritmica do peso $log(\mu)$, controlando pelo efeito das demais. Para a variável Heightpc,**Efeito muito franco comparado com o efeito da covariável Length2** temos um efeito linear e levemente positivo, os peixes proporcionalmente mais ailtos tendem a ser mais pesados de forma contínua e constante. Agora, para a variável Lenght2, observamos uma curva côncava pronunciada, revelando que o incremento no comprimento gera um forte aumento de peso, mas esse aumento desacelera levemente à medida que o peixe atinge tamanhos maiores. Este é um padrão complexo que foi capaz de ser capturado pela especificação do modelo de P-Splines. 
 
 ```{r fig.height=3, fig.width=8}
 #| echo: false
@@ -427,6 +427,163 @@ par(mfrow = c(1, 2))
 term.plot(fit5.perch, what = "mu", ask = FALSE, se = TRUE)
 par(mfrow = c(1, 1))
 ```
+
+
+# Exercício 3
+
+Observou-se 4380 indivíduos, com mais de 65 anos,
+atendidos através de um programa de saúde pública durante os anos de 1987-88. As variáveis coletadas são: (i) nvis (número de visitas ao médico), (ii) hosp (número de internações hospitalares), (iii) altacond (0:não, 1:sim), (iv) baixacond (0:não, 1:sim), (v) nucron (número de condições crônicas), (vi) gênero (0:feminino, 1:masculino), (vii) escol (escolaridade em anos de estudo) e (viii) seguro (seguro particular, 0:não, 1:sim). Quando altacond=0 e baixacond=0 tem-se condição média (casela de referência). O objetivo do estudo é explicar a demanda por serviços médicos por meio de modelos de regressão em que a resposta é o número de visitas ao médico e as demais variáveis como explicativas. 
+
+```{r, echo=FALSE}
+visitas = read.table("dados2/visitas.txt", header=TRUE)
+attach(visitas)
+suppressMessages(visitas$altacond<-as.factor(altacond))
+
+suppressMessages(visitas$baixacond<-as.factor(baixacond))
+suppressMessages(visitas$genero<-as.factor(genero))
+suppressMessages(visitas$seguro<-as.factor(seguro))
+levels(genero)<-c("F","M")
+```
+## Análise descritva
+```{r, echo=FALSE, fig.height=7}
+par(mfrow=c(4,2), mar=c(5,4,1,2), cex.main=0.8, cex.lab=0.7, cex.axis=0.7)
+
+plot(table(nvis),xlab="Visitas",ylab="Frequência")
+
+adjbox(split(nvis, altacond), names=levels(altacond), col=paleta[c(2,4)], main="", ylab="Número de visitas ao médico", xlab="Alta condição",pch=16)
+
+adjbox(split(nvis, baixacond), names=levels(baixacond), col=paleta[c(2,4)], main="", ylab="Número de visitas ao médico", xlab="Baixa condição",pch=16)
+
+adjbox(split(nvis, genero), names=levels(genero), col=paleta[c(2,4)], main="", ylab="Número de visitas ao médico", xlab="Gênero",pch=16)
+
+adjbox(split(nvis, seguro), names=levels(seguro), col=paleta[c(2,4)], main="", ylab="Número de visitas ao médico", xlab="Seguro",pch=16)
+
+plot(escol, nvis, pch=16, xlab="Ecolaridade",
+     ylab="Número de visitas ao médico")
+lines(smooth.spline(escol, nvis, df=4), lwd=2, col="coral")
+
+plot(hosp, nvis, pch=16, xlab="Número de internações",
+     ylab="Número de visitas ao médico")
+lines(smooth.spline(hosp, tol=1e-6, nvis, df=4), lwd=2, col="coral")
+
+plot(nucron, nvis, pch=16, xlab="Número de doenças crônicas",
+     ylab="Número de visitas ao médico")
+lines(smooth.spline(nucron, nvis, df=4), lwd=2, col="coral")
+
+mtext("Figura 8: Gráficos das covariáveis e da resposta.", side = 1, line = -1, outer = TRUE, cex=0.8)
+```
+
+Na Figura 8 temos uma coleção de gráficos. No primeiro painel observamos a frequência dos número de visitas, a distribuição das visitas é assimétrica à direita. O estado de baixa condição e a contratação de seguro particular parecem estarem associadas a um aumento no número de visitas. Por outro lado, nota-se que indivíduos que apresentam alta condição apresentam uma mediana levemente menor, parecem estarem associados a uma redução no número de visitas. O mesmo pode ser dito a respeito do gênero feminino, apesar de serem mais dispersos parece ter uma mediana menor que o sexo masculino. Pelos diagramas de dispersão, a escolaridade não parece impactar no número de visitas ao médico. Além disso, número de internações e doenças crônicas parecem apresentar associações não lineares com a resposta.
+
+### Modelo Poisson
+
+O ajuste inicial considerou todas as covariáveis e a seleção via *StepGAIC* as manteve com AIC = 32565.15.
+\begin{align*}
+&(1)\ nvis_i \overset{ind}{\sim} Poisson(\mu_i),\ i= 1, \cdots, 4380 \\
+&(2) log(\mu_i) = 1.055480 +  0.152149  hosp_i  -0.368844 altacond.1_i + 0.226855 baixacond.1_i + 0.147650   nucron_i -0.134643_M + 0.020791  escol_i +  0.200485 seguro_i
+\end{align*}
+Todas são significativas ao nível de significancia de 5%.
+
+
+#### Análise de resíduos
+```{r, echo=FALSE, fig.height=3, warning=FALSE}
+fit1.visitas = gamlss(nvis~., family=PO, data=visitas)
+fit2.visitas = stepGAIC(fit1.visitas, trace = F) 
+summary(fit2.visitas)
+# plot(fit2.visitas)
+heat_residuals(fit2.visitas,R=50)
+mtext("Figura 9: Gráficos de calor dos resíduos.", side = 4, line = 2, outer = TRUE, cex=0.7)
+
+```
+O painel (a) não apresenta uma distribuição uniforme de pontos, já era esperado, pois a na Poisson a média é igual a variância. Já no painel (b) não temos indicativos que violam a suposição de independência do modelo. Pelo painel (c) observamos um problema de sobredispersão, ou seja, a Poisson não foi capaz de acomodar todos os pontos.
+
+### Modelo Binomial Negativo
+O ajuste inicial com a distribuição Binomial Negativa também considerou todas as covariáveis e a seleção via *StepGAIC* as manteve todas com AIC = 23809.46.
+ 
+\begin{align*}
+&(1)\ nvis_i \overset{ind}{\sim} Binomial(\mu_i, \nu),\ i= 1, \cdots, 4380, \ \nu = \frac{1}{\sigma} \\
+&(2) log(\mu_i) = 1.055480 +  0.152149  hosp_i  -0.368844 altacond.1_i + 0.226855 baixacond.1_i + 0.147650   nucron_i -0.134643_M + 0.020791  escol_i +  0.200485 seguro_i
+&(3) log(\sigma) = -0.28001
+\end{align*}
+
+
+```{r}
+fit3.visitas = gamlss(nvis ~.,family=NBI, data=visitas)
+fit4.visitas = stepGAIC(fit3.visitas,direction="both")
+summary(fit4.visitas)
+```
+
+#### Análise de resíduos
+```{r, echo=FALSE, fig.height=3, warning=FALSE}
+heat_residuals(fit4.visitas,R=100)
+mtext("Figura 10: Gráficos de calor dos resíduos.", side = 4, line = 2, outer = TRUE, cex=0.7)
+
+```
+
+```{r}
+fit5.visitas = gamlss(nvis ~ ., ~ .,family=NBI,
+data=visitas)
+fit6.visitas = stepGAIC(fit5.visitas, what="sigma")
+
+summary(fit6.visitas)
+heat_residuals(fit6.visitas, R=50)
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+coef_mu <- coef(fit6.visitas, what="mu")
+ic_mu <- confint(fit6.visitas, what="mu")
+
+tabela_razao_medias <- data.frame(
+  Estimativa_Log = coef_mu,
+  Razao_Medias = exp(coef_mu),
+  IC_95_Inf = exp(ic_mu[,1]),
+  IC_95_Sup = exp(ic_mu[,2])
+)
+
+knitr::kable(tabela_razao_medias, caption = "Estimativas e razão de médias")
+
+```
+
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+coef_sigma <- coef(fit6.visitas, what = "sigma")
+ic_sigma <- confint(fit6.visitas, what = "sigma")
+
+tabela_sigma <- data.frame(
+  Estimativa_Log = coef_sigma,
+  Razao_CVs = exp(coef_sigma),
+  IC_95_Inf = exp(ic_sigma[, 1]),
+  IC_95_Sup = exp(ic_sigma[, 2])
+)
+
+knitr::kable(tabela_sigma, caption = "Estimativas e razão de coeficientes de variação")
+
+```
+
+```{r, fig.height=6, fig.width=6}
+#| echo: false
+#| message: false
+#| warning: false
+par(mfcol = c(4, 2), mar = c(4, 4, 2, 1), oma = c(0, 0, 3, 0))
+term.plot(fit6.visitas, what = "mu",ask = FALSE, se = TRUE)
+mtext("Efeitos Média", side = 3, outer = TRUE, line = 1, adj = 0.25, cex = 1.2, font = 2)
+par(mfcol = c(4, 2), mar = c(4, 4, 2, 1), oma = c(0, 0, 3, 0))
+term.plot(fit6.visitas, what = "sigma", ask = FALSE, se = TRUE)
+mtext("Efeitos Dispersão", side = 3, outer = TRUE, line = 1, adj = 0.75, cex = 1.2, font = 2)
+
+par(mfrow = c(1, 1), oma = c(0, 0, 0, 0))
+mtext("Figura 2: Efeitos parciais.", side =1, line = -1, outer = TRUE, cex=0.8)
+
+```
+
+
 # Declaração de contribuição
 
 Declaramos que ambas as participantes da dupla contribuíram para a conclusão deste trabalho. Os exercícios 1 e 2 foram redigidos pela Maia e revisados pela Jaqueline. Já os exercícios 3 e 4 foram desenvolvidos pela Jaqueline e revisados pela Maia. 
